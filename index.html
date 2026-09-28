@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carga de Parámetros POS - Credicard</title>
     
-    <!-- Librería OCR: Tesseract.js -->
+    <!-- Tesseract.js (OCR) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    
-    <!-- Librería PDF: PDF.js de Mozilla -->
+    <!-- PDF.js (Lector PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- jsQR (Lector Códigos QR) -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
@@ -21,6 +23,7 @@
         .drop-zone.dragover { background: #dee2e6; border-color: #495057; }
         #preview { width: 100%; height: 100%; display: none; border: none; }
         #ocr-loading { display: none; position: absolute; top: 10px; right: 10px; background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 10;}
+        
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85rem; color: #333; }
@@ -39,7 +42,7 @@
         <div id="ocr-loading">Analizando documento... 🔍</div>
         <div class="drop-zone" id="drop-zone">
             Arrastra aquí el PDF o Imagen de la solicitud<br>
-            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Lectura OCR automática para RIF, Comercio y Dirección.</span>
+            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Lectura por QR inteligente o IA automática.</span>
         </div>
         <iframe id="preview"></iframe>
     </div>
@@ -109,11 +112,12 @@
 
             <button type="submit" id="btn-procesar">Cargar a Sheets y Generar CRM</button>
         </form>
-
         <div id="resultado-crm"></div>
     </div>
 
     <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
+        
         const dropZone = document.getElementById('drop-zone');
         const preview = document.getElementById('preview');
         const form = document.getElementById('param-form');
@@ -122,7 +126,7 @@
         const ocrLoading = document.getElementById('ocr-loading');
         let archivoSeleccionado = null;
 
-        // Eventos Drag & Drop
+        // --- Drag & Drop ---
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
         
@@ -137,15 +141,69 @@
                 preview.style.display = 'block';
                 preview.src = urlTemporal;
 
+                // Limpiar formulario antes de una nueva lectura
+                document.getElementById('comercio').value = "";
+                document.getElementById('direccion').value = "";
+                document.getElementById('rif').value = "";
+                document.getElementById('afiliado').value = "";
+
                 if (archivoSeleccionado.type.startsWith('image/')) {
-                    ejecutarOCR(archivoSeleccionado);
+                    buscarQR(urlTemporal, archivoSeleccionado);
                 } else if (archivoSeleccionado.type === 'application/pdf') {
                     procesarPDF(archivoSeleccionado);
                 }
             }
         });
 
-        // Conversión de PDF a Imagen para Tesseract
+        // --- Lector QR Inteligente ---
+        function buscarQR(imgUrl, archivoOriginal) {
+            ocrLoading.style.display = 'block';
+            ocrLoading.innerText = "Buscando QR... 🔍";
+            btnProcesar.disabled = true;
+
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                context.drawImage(img, 0, 0, img.width, img.height);
+                
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const codigoQR = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if (codigoQR && codigoQR.data.includes("seniat.gob.ve")) {
+                    leerDesdeURLSeniat(codigoQR.data);
+                } else {
+                    ejecutarOCR(archivoOriginal); // Respaldo IA si no hay QR
+                }
+            };
+            img.src = imgUrl;
+        }
+
+        async function leerDesdeURLSeniat(urlSeniat) {
+            ocrLoading.innerText = "Descargando datos del SENIAT... 🌐";
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ accion: "leer_qr", url: urlSeniat })
+                });
+                const resultado = await response.json();
+                
+                if (resultado.status === "éxito") {
+                    procesarTextoLimpio(resultado.texto); 
+                    ocrLoading.style.display = 'none';
+                    btnProcesar.disabled = false;
+                } else {
+                    ejecutarOCR(archivoSeleccionado);
+                }
+            } catch (error) {
+                ejecutarOCR(archivoSeleccionado);
+            }
+        }
+
+        // --- Conversión PDF ---
         async function procesarPDF(file) {
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "Convirtiendo PDF... 📄";
@@ -157,7 +215,7 @@
                     const typedarray = new Uint8Array(this.result);
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
                     const page = await pdf.getPage(1);
-                    const scale = 2; // Mejorar resolución
+                    const scale = 2; 
                     const viewport = page.getViewport({scale: scale});
                     
                     const canvas = document.createElement('canvas');
@@ -167,9 +225,10 @@
                     
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
                     const imageBase64 = canvas.toDataURL('image/png');
-                    ejecutarOCR(imageBase64);
+                    
+                    // Con el PDF renderizado, buscamos el QR primero
+                    buscarQR(imageBase64, imageBase64);
                 } catch (error) {
-                    console.error("Error al procesar PDF:", error);
                     ocrLoading.style.display = 'none';
                     btnProcesar.disabled = false;
                 }
@@ -177,14 +236,107 @@
             fileReader.readAsArrayBuffer(file);
         }
 
-      CALLE LOS ROLITOS CASA NRO 51-25 BARRIO EL TOSTAO BARQUISIMETO LARA ZONA POSTAL 3001
-        // Envío de datos a Google Sheets
+        // --- IA OCR Tesseract (Respaldo) ---
+        async function ejecutarOCR(imagenOSource) {
+            ocrLoading.style.display = 'block';
+            ocrLoading.innerText = "IA leyendo imagen... 🔍";
+            btnProcesar.disabled = true;
+
+            try {
+                const result = await Tesseract.recognize(imagenOSource, 'spa');
+                procesarTextoLimpio(result.data.text);
+            } catch (error) {
+                console.error("Error en Tesseract:", error);
+            } finally {
+                ocrLoading.style.display = 'none';
+                btnProcesar.disabled = false;
+            }
+        }
+
+        // --- Motor Central de Extracción de Datos ---
+        function procesarTextoLimpio(textoLeido) {
+            const lineas = textoLeido.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const regexRifExact = /[JGVE]-?\d{8,9}/i;
+            
+            let capturandoDireccion = false;
+            let direccionFiscal = "";
+            let comercioEncontrado = false;
+
+            for (let i = 0; i < lineas.length; i++) {
+                // Cortafuegos: ignorar lado derecho del documento
+                let linea = lineas[i].split(/(FECHA|ÚLTIMA|ULTIMA|N° COMP|N\* COMP|N°COMP|GERENCIA|DATOS DE REGISTRO)/i)[0].trim();
+                if (!linea) continue;
+
+                const lineaUpper = linea.toUpperCase();
+
+                // 1. Extraer RIF
+                const matchRif = linea.match(regexRifExact);
+                if (matchRif) {
+                    let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    if (rifLimpio.length === 10) {
+                        document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}`;
+                    } else {
+                        document.getElementById('rif').value = rifLimpio; 
+                    }
+                    
+                    let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
+                    if (restoDeLinea.length > 3) {
+                        document.getElementById('comercio').value = restoDeLinea;
+                        comercioEncontrado = true;
+                    }
+                    continue;
+                }
+
+                // 2. Extraer Comercio (Nuevo Formato)
+                if (document.getElementById('rif').value && !comercioEncontrado) {
+                    if (!lineaUpper.includes('DOMICILIO') && !lineaUpper.includes('DIRECCIÓN') && !lineaUpper.includes('IDENTIFICACIÓN')) {
+                        if (linea.length > 3) {
+                            document.getElementById('comercio').value = linea;
+                            comercioEncontrado = true;
+                        }
+                        continue;
+                    }
+                }
+                
+                // 3. Extraer Dirección
+                if (lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
+                    capturandoDireccion = true;
+                    let fragmento = linea.replace(/(DOMICILIO FISCAL|DIRECCIÓN FISCAL|DIRECCION FISCAL)[\s:]*/ig, '').trim();
+                    if (fragmento) { direccionFiscal += fragmento + " "; }
+                    if (fragmento.toUpperCase().match(/ZONA POSTAL\s*\d+/)) { capturandoDireccion = false; }
+                    continue; 
+                }
+
+                if (capturandoDireccion) {
+                    if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES')) {
+                        capturandoDireccion = false;
+                    } else {
+                        direccionFiscal += linea + " ";
+                        if (lineaUpper.match(/ZONA POSTAL\s*\d+/)) { capturandoDireccion = false; }
+                    }
+                }
+
+                // 4. Extraer Afiliado
+                const regexAfiliado = /afiliado[\s:]*(\d{7,10})/i;
+                const matchAfiliado = linea.match(regexAfiliado);
+                if (matchAfiliado) {
+                    document.getElementById('afiliado').value = matchAfiliado[1];
+                }
+            }
+
+            if (direccionFiscal) {
+                document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
+            }
+        }
+
+        // --- Enviar Formulario ---
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             btnProcesar.innerText = "Registrando...";
             btnProcesar.disabled = true;
 
             const datosParaGuardar = {
+                accion: "guardar_credicard",
                 comercio: document.getElementById('comercio').value,
                 direccion: document.getElementById('direccion').value,
                 rif: document.getElementById('rif').value,
@@ -194,9 +346,6 @@
                 comunicacion: document.getElementById('comunicacion').value,
                 operadora: document.getElementById('operadora').value
             };
-
-            // URL del API de Google Apps Script 
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
 
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -212,7 +361,6 @@
                     resultadoCrm.style.display = 'block';
                     resultadoCrm.innerText = textoCrm + "\n\n(Copia este texto para tu sistema)";
                     
-                    // Limpieza post-envío
                     form.reset();
                     preview.style.display = 'none';
                     dropZone.style.display = 'flex';
