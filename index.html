@@ -4,32 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carga de Parámetros POS - Credicard</title>
-    <!-- Importamos Tesseract.js para el OCR en el navegador -->
+    
+    <!-- Librería OCR: Tesseract.js -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    
+    <!-- Librería PDF: PDF.js de Mozilla -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configuración del worker de PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background-color: #f4f7f6; }
-        
-        /* Lado Izquierdo: Visor */
         .visor { flex: 1; border-right: 2px solid #ccc; display: flex; flex-direction: column; background: #e9ecef; position: relative;}
         .drop-zone { flex: 1; display: flex; align-items: center; justify-content: center; border: 3px dashed #6c757d; margin: 20px; border-radius: 10px; color: #6c757d; font-size: 1.2rem; cursor: pointer; transition: 0.3s; text-align: center; padding: 20px;}
         .drop-zone.dragover { background: #dee2e6; border-color: #495057; }
         #preview { width: 100%; height: 100%; display: none; border: none; }
-        
-        /* Indicador de carga OCR */
-        #ocr-loading { display: none; position: absolute; top: 10px; right: 10px; background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; }
-
-        /* Lado Derecho: Formulario */
+        #ocr-loading { display: none; position: absolute; top: 10px; right: 10px; background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 10;}
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85rem; color: #333; }
         .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 0.95rem; }
         .form-row { display: flex; gap: 15px; }
         .form-row .form-group { flex: 1; }
-        
         button { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 10px; font-weight: bold; }
         button:hover { background-color: #0b5ed7; }
         button:disabled { background-color: #6c757d; cursor: not-allowed; }
-        
         #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.4;}
     </style>
 </head>
@@ -38,8 +39,8 @@
     <div class="visor">
         <div id="ocr-loading">Analizando documento... 🔍</div>
         <div class="drop-zone" id="drop-zone">
-            Arrastra aquí la Imagen de la solicitud<br>
-            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Lectura OCR automática al soltar el archivo.</span>
+            Arrastra aquí el PDF o Imagen de la solicitud<br>
+            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Lectura OCR automática para RIF y Afiliado.</span>
         </div>
         <iframe id="preview"></iframe>
     </div>
@@ -51,7 +52,6 @@
                 <label>Nombre del Comercio</label>
                 <input type="text" id="comercio" placeholder="Ej: Inversiones C.A." required>
             </div>
-            
             <div class="form-row">
                 <div class="form-group">
                     <label>RIF</label>
@@ -62,7 +62,6 @@
                     <input type="text" id="afiliado" placeholder="Ej: 73497418" required>
                 </div>
             </div>
-
             <div class="form-row">
                 <div class="form-group">
                     <label>Banco</label>
@@ -83,7 +82,6 @@
                     </select>
                 </div>
             </div>
-
             <div class="form-row">
                 <div class="form-group">
                     <label>Comunicación</label>
@@ -101,10 +99,8 @@
                     </select>
                 </div>
             </div>
-
             <button type="submit" id="btn-procesar">Cargar a Sheets y Generar CRM</button>
         </form>
-
         <div id="resultado-crm"></div>
     </div>
 
@@ -117,7 +113,7 @@
         const ocrLoading = document.getElementById('ocr-loading');
         let archivoSeleccionado = null;
 
-        // --- Lógica Drag & Drop y OCR ---
+        // Visualización y Drag & Drop
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
         
@@ -128,60 +124,93 @@
             if (e.dataTransfer.files.length > 0) {
                 archivoSeleccionado = e.dataTransfer.files[0];
                 
-                // Mostrar imagen
+                // Mostrar archivo en el Iframe
                 const urlTemporal = URL.createObjectURL(archivoSeleccionado);
                 dropZone.style.display = 'none';
                 preview.style.display = 'block';
                 preview.src = urlTemporal;
 
-                // Solo aplicar OCR si es una imagen (Tesseract JS maneja mejor imágenes que PDFs directamente)
-                if(archivoSeleccionado.type.startsWith('image/')) {
+                // Enrutar dependiendo si es Imagen o PDF
+                if (archivoSeleccionado.type.startsWith('image/')) {
                     ejecutarOCR(archivoSeleccionado);
+                } else if (archivoSeleccionado.type === 'application/pdf') {
+                    procesarPDF(archivoSeleccionado);
                 } else {
-                    alert("Para la lectura automática OCR, por favor arrastra una imagen (JPG/PNG). Si es un PDF, deberás llenar los datos manualmente.");
+                    alert("Formato no soportado para OCR automático. Por favor ingresa los datos manualmente.");
                 }
             }
         });
 
-        async function ejecutarOCR(imagen) {
+        // Convierte la primera página del PDF en imagen para que Tesseract la entienda
+        async function procesarPDF(file) {
             ocrLoading.style.display = 'block';
+            ocrLoading.innerText = "Convirtiendo PDF... 📄";
             btnProcesar.disabled = true;
-            btnProcesar.innerText = "Esperando lectura OCR...";
+
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                try {
+                    const typedarray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    const page = await pdf.getPage(1); // Leemos solo la pág 1
+                    
+                    const scale = 2; // Escala 2x para mejor resolución en el OCR
+                    const viewport = page.getViewport({scale: scale});
+                    
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    
+                    // Convertimos el canvas a imagen base64
+                    const imageBase64 = canvas.toDataURL('image/png');
+                    ejecutarOCR(imageBase64);
+                    
+                } catch (error) {
+                    console.error("Error al procesar PDF:", error);
+                    ocrLoading.style.display = 'none';
+                    btnProcesar.disabled = false;
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        // Ejecuta la lectura de texto (sirve tanto para imágenes puras como para el PDF convertido)
+        async function ejecutarOCR(imagenOSource) {
+            ocrLoading.style.display = 'block';
+            ocrLoading.innerText = "Leyendo datos... 🔍";
+            btnProcesar.disabled = true;
 
             try {
-                // Ejecutamos Tesseract en español
-                const result = await Tesseract.recognize(imagen, 'spa');
+                const result = await Tesseract.recognize(imagenOSource, 'spa');
                 const textoLeido = result.data.text;
                 
-                // 1. Buscar RIF: Busca J, G, V o E, guion opcional, 8 números, guion opcional, 1 número
+                // Extraer RIF
                 const regexRif = /[JGVE]-?\d{8}-?\d/i;
                 const matchRif = textoLeido.match(regexRif);
                 if(matchRif) {
-                    // Formatear a mayúsculas y asegurar los guiones si faltan
                     let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
                     document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}`;
                 }
 
-                // 2. Buscar Afiliado: Busca la palabra afiliado y captura los siguientes 8 a 10 números
+                // Extraer Afiliado
                 const regexAfiliado = /afiliado[\s:]*(\d{7,10})/i;
                 const matchAfiliado = textoLeido.match(regexAfiliado);
                 if(matchAfiliado) {
                     document.getElementById('afiliado').value = matchAfiliado[1];
                 }
 
-                // Nota: El nombre del comercio es más difícil de extraer con Regex porque no tiene un patrón fijo.
-                // Requeriría buscar palabras clave (ej: "Razón Social:") dependiendo de la plantilla exacta del banco.
-
             } catch (error) {
-                console.error("Error en OCR:", error);
+                console.error("Error en Tesseract:", error);
             } finally {
                 ocrLoading.style.display = 'none';
                 btnProcesar.disabled = false;
-                btnProcesar.innerText = "Cargar a Sheets y Generar CRM";
             }
         }
 
-        // --- Envío de datos a Google Sheets ---
+        // Envío de datos a Google Sheets
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             btnProcesar.innerText = "Registrando...";
@@ -197,8 +226,10 @@
                 operadora: document.getElementById('operadora').value
             };
 
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             // REEMPLAZA CON TU URL DE GOOGLE APPS SCRIPT
             const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
