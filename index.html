@@ -9,8 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <!-- PDF.js (Lector PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <!-- jsQR (Lector Códigos QR) -->
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -42,7 +40,7 @@
         <div id="ocr-loading">Analizando documento... 🔍</div>
         <div class="drop-zone" id="drop-zone">
             Arrastra aquí el PDF o Imagen de la solicitud<br>
-            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Lectura por QR inteligente o IA automática.</span>
+            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Lectura OCR automática y adaptativa.</span>
         </div>
         <iframe id="preview"></iframe>
     </div>
@@ -148,60 +146,12 @@
                 document.getElementById('afiliado').value = "";
 
                 if (archivoSeleccionado.type.startsWith('image/')) {
-                    buscarQR(urlTemporal, archivoSeleccionado);
+                    ejecutarOCR(archivoSeleccionado);
                 } else if (archivoSeleccionado.type === 'application/pdf') {
                     procesarPDF(archivoSeleccionado);
                 }
             }
         });
-
-        // --- Lector QR Inteligente ---
-        function buscarQR(imgUrl, archivoOriginal) {
-            ocrLoading.style.display = 'block';
-            ocrLoading.innerText = "Buscando QR... 🔍";
-            btnProcesar.disabled = true;
-
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                context.drawImage(img, 0, 0, img.width, img.height);
-                
-                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                const codigoQR = jsQR(imageData.data, imageData.width, imageData.height);
-                
-                if (codigoQR && codigoQR.data.includes("seniat.gob.ve")) {
-                    leerDesdeURLSeniat(codigoQR.data);
-                } else {
-                    ejecutarOCR(archivoOriginal); // Respaldo IA si no hay QR
-                }
-            };
-            img.src = imgUrl;
-        }
-
-        async function leerDesdeURLSeniat(urlSeniat) {
-            ocrLoading.innerText = "Descargando datos del SENIAT... 🌐";
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ accion: "leer_qr", url: urlSeniat })
-                });
-                const resultado = await response.json();
-                
-                if (resultado.status === "éxito") {
-                    procesarTextoLimpio(resultado.texto); 
-                    ocrLoading.style.display = 'none';
-                    btnProcesar.disabled = false;
-                } else {
-                    ejecutarOCR(archivoSeleccionado);
-                }
-            } catch (error) {
-                ejecutarOCR(archivoSeleccionado);
-            }
-        }
 
         // --- Conversión PDF ---
         async function procesarPDF(file) {
@@ -215,7 +165,7 @@
                     const typedarray = new Uint8Array(this.result);
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
                     const page = await pdf.getPage(1);
-                    const scale = 2; 
+                    const scale = 2.5; // Alta resolución para mejorar el OCR
                     const viewport = page.getViewport({scale: scale});
                     
                     const canvas = document.createElement('canvas');
@@ -226,8 +176,7 @@
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
                     const imageBase64 = canvas.toDataURL('image/png');
                     
-                    // Con el PDF renderizado, buscamos el QR primero
-                    buscarQR(imageBase64, imageBase64);
+                    ejecutarOCR(imageBase64);
                 } catch (error) {
                     ocrLoading.style.display = 'none';
                     btnProcesar.disabled = false;
@@ -236,7 +185,7 @@
             fileReader.readAsArrayBuffer(file);
         }
 
-        // --- IA OCR Tesseract (Respaldo) ---
+        // --- Motor Central de OCR y Máquina de Estados ---
         async function ejecutarOCR(imagenOSource) {
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "IA leyendo imagen... 🔍";
@@ -244,88 +193,104 @@
 
             try {
                 const result = await Tesseract.recognize(imagenOSource, 'spa');
-                procesarTextoLimpio(result.data.text);
+                
+                // Eliminamos líneas vacías para no procesar los espacios en blanco
+                const lineas = result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                const regexRifExact = /[JGVE]-?\d{8,9}/i;
+                
+                let estadoLectura = "BUSCANDO_RIF";
+                let direccionFiscal = "";
+
+                for (let i = 0; i < lineas.length; i++) {
+                    // Cortafuegos: ignorar lado derecho del documento
+                    let linea = lineas[i].split(/(FECHA|ÚLTIMA|ULTIMA|N° COMP|N\* COMP|N°COMP|GERENCIA|DATOS DE REGISTRO|IDENTIFICACIÓN DEL CONTRIBUYENTE)/i)[0].trim();
+                    if (!linea) continue;
+
+                    const lineaUpper = linea.toUpperCase();
+
+                    // --- ESTADO 1: Extraer RIF ---
+                    if (estadoLectura === "BUSCANDO_RIF") {
+                        const matchRif = linea.match(regexRifExact);
+                        if (matchRif) {
+                            let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
+                            if (rifLimpio.length === 10) {
+                                document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}`;
+                            } else {
+                                document.getElementById('rif').value = rifLimpio; 
+                            }
+                            
+                            // Comprobar si el nombre está en esta misma línea (Formato Viejo)
+                            let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
+                            if (restoDeLinea.length > 3) {
+                                document.getElementById('comercio').value = restoDeLinea;
+                                estadoLectura = "BUSCANDO_DOMICILIO";
+                            } else {
+                                estadoLectura = "BUSCANDO_NOMBRE";
+                            }
+                            continue;
+                        }
+                    }
+
+                    // --- ESTADO 2: Extraer Nombre del Comercio (Formato Nuevo) ---
+                    if (estadoLectura === "BUSCANDO_NOMBRE") {
+                        if (!lineaUpper.includes('DOMICILIO') && !lineaUpper.includes('DIRECCIÓN')) {
+                            if (linea.length > 3) {
+                                document.getElementById('comercio').value = linea;
+                                estadoLectura = "BUSCANDO_DOMICILIO";
+                                continue;
+                            }
+                        } else {
+                            estadoLectura = "BUSCANDO_DOMICILIO"; // Failsafe
+                        }
+                    }
+                    
+                    // --- ESTADO 3: Detectar inicio de Dirección ---
+                    if (estadoLectura === "BUSCANDO_DOMICILIO" || lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
+                        if (lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
+                            estadoLectura = "CAPTURANDO_DIRECCION";
+                            let fragmento = linea.replace(/(DOMICILIO FISCAL|DIRECCIÓN FISCAL|DIRECCION FISCAL)[\s:]*/ig, '').trim();
+                            
+                            if (fragmento) { 
+                                direccionFiscal += fragmento + " "; 
+                                if (fragmento.toUpperCase().match(/ZONA POSTAL\s*\d+/)) { 
+                                    estadoLectura = "BUSCANDO_AFILIADO"; 
+                                }
+                            }
+                            continue; 
+                        }
+                    }
+
+                    // --- ESTADO 4: Recolectar Líneas de la Dirección ---
+                    if (estadoLectura === "CAPTURANDO_DIRECCION") {
+                        if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES')) {
+                            estadoLectura = "BUSCANDO_AFILIADO";
+                        } else {
+                            direccionFiscal += linea + " ";
+                            if (lineaUpper.match(/ZONA POSTAL\s*\d+/)) { 
+                                estadoLectura = "BUSCANDO_AFILIADO"; 
+                            }
+                        }
+                        continue;
+                    }
+
+                    // --- SIEMPRE ACTIVO: Extraer Afiliado ---
+                    const regexAfiliado = /afiliado[\s:]*(\d{7,10})/i;
+                    const matchAfiliado = linea.match(regexAfiliado);
+                    if (matchAfiliado) {
+                        document.getElementById('afiliado').value = matchAfiliado[1];
+                    }
+                }
+
+                // Escribir la dirección consolidada en el input
+                if (direccionFiscal) {
+                    document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
+                }
+
             } catch (error) {
                 console.error("Error en Tesseract:", error);
             } finally {
                 ocrLoading.style.display = 'none';
                 btnProcesar.disabled = false;
-            }
-        }
-
-        // --- Motor Central de Extracción de Datos ---
-        function procesarTextoLimpio(textoLeido) {
-            const lineas = textoLeido.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            const regexRifExact = /[JGVE]-?\d{8,9}/i;
-            
-            let capturandoDireccion = false;
-            let direccionFiscal = "";
-            let comercioEncontrado = false;
-
-            for (let i = 0; i < lineas.length; i++) {
-                // Cortafuegos: ignorar lado derecho del documento
-                let linea = lineas[i].split(/(FECHA|ÚLTIMA|ULTIMA|N° COMP|N\* COMP|N°COMP|GERENCIA|DATOS DE REGISTRO)/i)[0].trim();
-                if (!linea) continue;
-
-                const lineaUpper = linea.toUpperCase();
-
-                // 1. Extraer RIF
-                const matchRif = linea.match(regexRifExact);
-                if (matchRif) {
-                    let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
-                    if (rifLimpio.length === 10) {
-                        document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}`;
-                    } else {
-                        document.getElementById('rif').value = rifLimpio; 
-                    }
-                    
-                    let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
-                    if (restoDeLinea.length > 3) {
-                        document.getElementById('comercio').value = restoDeLinea;
-                        comercioEncontrado = true;
-                    }
-                    continue;
-                }
-
-                // 2. Extraer Comercio (Nuevo Formato)
-                if (document.getElementById('rif').value && !comercioEncontrado) {
-                    if (!lineaUpper.includes('DOMICILIO') && !lineaUpper.includes('DIRECCIÓN') && !lineaUpper.includes('IDENTIFICACIÓN')) {
-                        if (linea.length > 3) {
-                            document.getElementById('comercio').value = linea;
-                            comercioEncontrado = true;
-                        }
-                        continue;
-                    }
-                }
-                
-                // 3. Extraer Dirección
-                if (lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
-                    capturandoDireccion = true;
-                    let fragmento = linea.replace(/(DOMICILIO FISCAL|DIRECCIÓN FISCAL|DIRECCION FISCAL)[\s:]*/ig, '').trim();
-                    if (fragmento) { direccionFiscal += fragmento + " "; }
-                    if (fragmento.toUpperCase().match(/ZONA POSTAL\s*\d+/)) { capturandoDireccion = false; }
-                    continue; 
-                }
-
-                if (capturandoDireccion) {
-                    if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES')) {
-                        capturandoDireccion = false;
-                    } else {
-                        direccionFiscal += linea + " ";
-                        if (lineaUpper.match(/ZONA POSTAL\s*\d+/)) { capturandoDireccion = false; }
-                    }
-                }
-
-                // 4. Extraer Afiliado
-                const regexAfiliado = /afiliado[\s:]*(\d{7,10})/i;
-                const matchAfiliado = linea.match(regexAfiliado);
-                if (matchAfiliado) {
-                    document.getElementById('afiliado').value = matchAfiliado[1];
-                }
-            }
-
-            if (direccionFiscal) {
-                document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
             }
         }
 
@@ -336,7 +301,6 @@
             btnProcesar.disabled = true;
 
             const datosParaGuardar = {
-                accion: "guardar_credicard",
                 comercio: document.getElementById('comercio').value,
                 direccion: document.getElementById('direccion').value,
                 rif: document.getElementById('rif').value,
