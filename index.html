@@ -11,7 +11,6 @@
     <!-- Librería PDF: PDF.js de Mozilla -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-        // Configuración del worker de PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
@@ -25,7 +24,7 @@
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85rem; color: #333; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 0.95rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 0.95rem; font-family: inherit;}
         .form-row { display: flex; gap: 15px; }
         .form-row .form-group { flex: 1; }
         button { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 10px; font-weight: bold; }
@@ -40,7 +39,7 @@
         <div id="ocr-loading">Analizando documento... 🔍</div>
         <div class="drop-zone" id="drop-zone">
             Arrastra aquí el PDF o Imagen de la solicitud<br>
-            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Lectura OCR automática para RIF y Afiliado.</span>
+            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Lectura OCR automática para RIF, Comercio y Dirección.</span>
         </div>
         <iframe id="preview"></iframe>
     </div>
@@ -52,6 +51,12 @@
                 <label>Nombre del Comercio</label>
                 <input type="text" id="comercio" placeholder="Ej: Inversiones C.A." required>
             </div>
+            
+            <div class="form-group">
+                <label>Dirección Fiscal</label>
+                <textarea id="direccion" rows="2" placeholder="Extraída del RIF..."></textarea>
+            </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label>RIF</label>
@@ -62,6 +67,7 @@
                     <input type="text" id="afiliado" placeholder="Ej: 73497418" required>
                 </div>
             </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label>Banco</label>
@@ -82,6 +88,7 @@
                     </select>
                 </div>
             </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label>Comunicación</label>
@@ -99,8 +106,10 @@
                     </select>
                 </div>
             </div>
+
             <button type="submit" id="btn-procesar">Cargar a Sheets y Generar CRM</button>
         </form>
+
         <div id="resultado-crm"></div>
     </div>
 
@@ -113,7 +122,7 @@
         const ocrLoading = document.getElementById('ocr-loading');
         let archivoSeleccionado = null;
 
-        // Visualización y Drag & Drop
+        // Eventos Drag & Drop
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
         
@@ -123,25 +132,20 @@
             
             if (e.dataTransfer.files.length > 0) {
                 archivoSeleccionado = e.dataTransfer.files[0];
-                
-                // Mostrar archivo en el Iframe
                 const urlTemporal = URL.createObjectURL(archivoSeleccionado);
                 dropZone.style.display = 'none';
                 preview.style.display = 'block';
                 preview.src = urlTemporal;
 
-                // Enrutar dependiendo si es Imagen o PDF
                 if (archivoSeleccionado.type.startsWith('image/')) {
                     ejecutarOCR(archivoSeleccionado);
                 } else if (archivoSeleccionado.type === 'application/pdf') {
                     procesarPDF(archivoSeleccionado);
-                } else {
-                    alert("Formato no soportado para OCR automático. Por favor ingresa los datos manualmente.");
                 }
             }
         });
 
-        // Convierte la primera página del PDF en imagen para que Tesseract la entienda
+        // Conversión de PDF a Imagen para Tesseract
         async function procesarPDF(file) {
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "Convirtiendo PDF... 📄";
@@ -152,9 +156,8 @@
                 try {
                     const typedarray = new Uint8Array(this.result);
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                    const page = await pdf.getPage(1); // Leemos solo la pág 1
-                    
-                    const scale = 2; // Escala 2x para mejor resolución en el OCR
+                    const page = await pdf.getPage(1);
+                    const scale = 2; // Mejorar resolución
                     const viewport = page.getViewport({scale: scale});
                     
                     const canvas = document.createElement('canvas');
@@ -163,11 +166,8 @@
                     canvas.width = viewport.width;
                     
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    
-                    // Convertimos el canvas a imagen base64
                     const imageBase64 = canvas.toDataURL('image/png');
                     ejecutarOCR(imageBase64);
-                    
                 } catch (error) {
                     console.error("Error al procesar PDF:", error);
                     ocrLoading.style.display = 'none';
@@ -177,7 +177,7 @@
             fileReader.readAsArrayBuffer(file);
         }
 
-       // Ejecuta la lectura de texto (sirve tanto para imágenes puras como para el PDF convertido)
+        // Ejecución OCR y captura de datos (RIF, Nombre, Dirección, Afiliado)
         async function ejecutarOCR(imagenOSource) {
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "Leyendo datos... 🔍";
@@ -187,42 +187,62 @@
                 const result = await Tesseract.recognize(imagenOSource, 'spa');
                 const textoLeido = result.data.text;
                 
-                // Dividimos el texto en líneas limpias para analizar el contexto
                 const lineas = textoLeido.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 const regexRifExact = /[JGVE]-?\d{8}-?\d/i;
                 
+                let capturandoDireccion = false;
+                let direccionFiscal = "";
+
                 for (let i = 0; i < lineas.length; i++) {
                     const linea = lineas[i];
+                    const lineaUpper = linea.toUpperCase();
                     const matchRif = linea.match(regexRifExact);
 
+                    // 1. Extraer RIF y Nombre del Comercio
                     if (matchRif) {
-                        // 1. Encontramos el RIF: lo limpiamos y lo formateamos
                         let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
                         document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}`;
                         
-                        // 2. Extraer el Nombre del Comercio
-                        // Eliminamos la palabra "RIF" (si existe) y el número de RIF detectado de esa línea
                         let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
+                        // Cortar texto si encuentra la palabra FECHA
+                        restoDeLinea = restoDeLinea.split(/FECHA/i)[0].trim();
 
                         if (restoDeLinea.length > 3) {
-                            // Formato 1: El nombre quedó en la misma línea (Ej: V178282006 JESUS RAMON...)
                             document.getElementById('comercio').value = restoDeLinea;
                         } else if (i + 1 < lineas.length) {
-                            // Formato 2: La línea quedó vacía, el nombre está abajo (Ej: RIF: J-50783778-5 \n COMERCIANTE EJEMPLAR)
-                            let lineaSiguiente = lineas[i + 1];
-                            // Validamos que no esté leyendo la palabra domicilio o fecha por error
-                            if (!lineaSiguiente.toUpperCase().includes('DOMICILIO') && !lineaSiguiente.toUpperCase().includes('FECHA')) {
+                            let lineaSiguiente = lineas[i + 1].split(/FECHA/i)[0].trim();
+                            if (!lineaSiguiente.toUpperCase().includes('DOMICILIO')) {
                                 document.getElementById('comercio').value = lineaSiguiente;
                             }
                         }
                     }
                     
-                    // 3. Extraer Afiliado independientemente de dónde esté
+                    // 2. Extraer Dirección Fiscal
+                    if (lineaUpper.includes('DOMICILIO FISCAL')) {
+                        capturandoDireccion = true;
+                        direccionFiscal += linea.replace(/DOMICILIO FISCAL[\s:]*/ig, '').split(/FECHA/i)[0].trim() + " ";
+                        continue; 
+                    }
+
+                    if (capturandoDireccion) {
+                        if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES') || lineaUpper.includes('FECHA')) {
+                            capturandoDireccion = false;
+                        } else {
+                            direccionFiscal += linea.split(/FECHA/i)[0].trim() + " ";
+                        }
+                    }
+
+                    // 3. Extraer Número de Afiliado
                     const regexAfiliado = /afiliado[\s:]*(\d{7,10})/i;
                     const matchAfiliado = linea.match(regexAfiliado);
                     if (matchAfiliado) {
                         document.getElementById('afiliado').value = matchAfiliado[1];
                     }
+                }
+
+                // Colocar la dirección extraída en el formulario
+                if (direccionFiscal) {
+                    document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
                 }
 
             } catch (error) {
@@ -232,6 +252,7 @@
                 btnProcesar.disabled = false;
             }
         }
+
         // Envío de datos a Google Sheets
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -240,6 +261,7 @@
 
             const datosParaGuardar = {
                 comercio: document.getElementById('comercio').value,
+                direccion: document.getElementById('direccion').value,
                 rif: document.getElementById('rif').value,
                 afiliado: document.getElementById('afiliado').value,
                 banco: document.getElementById('banco').value,
@@ -248,10 +270,8 @@
                 operadora: document.getElementById('operadora').value
             };
 
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            // REEMPLAZA CON TU URL DE GOOGLE APPS SCRIPT
+            // URL del API de Google Apps Script 
             const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -263,9 +283,11 @@
                 const resultado = await response.json();
                 
                 if(resultado.status === "éxito") {
-                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nAfiliado: ${datosParaGuardar.afiliado}\nBanco: ${datosParaGuardar.banco}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
+                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nDirección: ${datosParaGuardar.direccion}\nAfiliado: ${datosParaGuardar.afiliado}\nBanco: ${datosParaGuardar.banco}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
                     resultadoCrm.style.display = 'block';
                     resultadoCrm.innerText = textoCrm + "\n\n(Copia este texto para tu sistema)";
+                    
+                    // Limpieza post-envío
                     form.reset();
                     preview.style.display = 'none';
                     dropZone.style.display = 'flex';
@@ -274,7 +296,7 @@
                     alert("Error en el script: " + resultado.mensaje);
                 }
             } catch (error) {
-                alert("Fallo de conexión. Verifica la URL de Google Script.");
+                alert("Fallo de conexión. Verifica que tengas internet y la URL sea correcta.");
             } finally {
                 btnProcesar.innerText = "Cargar a Sheets y Generar CRM";
                 btnProcesar.disabled = false;
