@@ -20,13 +20,14 @@
         #preview { width: 100%; height: 100%; border: none; flex: 1; background: #fff; border-radius: 5px;}
         #ocr-loading { display: none; position: absolute; top: 10px; right: 10px; background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 10;}
         
-        /* Miniaturas con Selectores */
-        .galeria { height: 95px; display: flex; gap: 12px; padding: 10px 5px 0 5px; overflow-x: auto; border-top: 1px solid #ccc; margin-top: 10px;}
-        .galeria-item { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 70px;}
+        /* Miniaturas */
+        .galeria { height: 85px; display: flex; gap: 15px; padding: 15px 5px 5px 5px; overflow-x: auto; border-top: 1px solid #ccc; margin-top: 10px;}
+        .galeria-item { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 60px;}
         .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff; transition: 0.2s;}
         .thumb.active { border-color: #0d6efd; transform: scale(1.05);}
         .thumb.pdf-icon { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: #dc3545; background: #fff;}
-        .doc-tipo { font-size: 0.7rem; padding: 2px; border-radius: 3px; border: 1px solid #ccc; width: 100%; text-align: center; cursor: pointer;}
+        .btn-eliminar { position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;}
+        .btn-eliminar:hover { background: #bb2d3b; transform: scale(1.1);}
 
         /* Formulario */
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
@@ -35,9 +36,9 @@
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 0.95rem; font-family: inherit;}
         .form-row { display: flex; gap: 15px; }
         .form-row .form-group { flex: 1; }
-        button { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 10px; font-weight: bold; }
-        button:hover { background-color: #0b5ed7; }
-        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        button.btn-principal { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 10px; font-weight: bold; }
+        button.btn-principal:hover { background-color: #0b5ed7; }
+        button.btn-principal:disabled { background-color: #6c757d; cursor: not-allowed; }
         #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.4;}
     </style>
 </head>
@@ -46,9 +47,10 @@
     <div class="visor" id="zona-arrastre">
         <div id="ocr-loading">Analizando documento... 🔍</div>
         
+        <input type="file" id="file-input" multiple accept="image/*,application/pdf" style="display: none;">
         <div class="drop-zone" id="drop-zone">
-            Arrastra archivos o pega (Ctrl+V) imágenes aquí<br>
-            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Puedes cargar múltiples documentos simultáneamente.</span>
+            Arrastra, pega (Ctrl+V) o haz clic aquí<br>
+            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Soporta múltiples PDFs e imágenes simultáneamente.</span>
         </div>
         
         <div id="preview-container">
@@ -131,17 +133,17 @@
                 </div>
             </div>
 
-            <button type="submit" id="btn-procesar">Cargar a Sheets y Generar CRM</button>
+            <button type="submit" id="btn-procesar" class="btn-principal">Cargar a Sheets y Generar CRM</button>
         </form>
         <div id="resultado-crm"></div>
     </div>
 
     <script>
-        // RECUERDA VERIFICAR QUE ESTA SEA TU URL ACTIVA DE GOOGLE SCRIPT
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
         
         const zonaArrastre = document.getElementById('zona-arrastre');
         const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
         const previewContainer = document.getElementById('preview-container');
         const preview = document.getElementById('preview');
         const galeria = document.getElementById('galeria');
@@ -152,7 +154,13 @@
         
         let archivosMemoria = [];
 
-        // --- Eventos Drag & Drop en todo el visor ---
+        // --- Eventos Input, Drag & Drop y Paste ---
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            Array.from(e.target.files).forEach(agregarArchivo);
+            fileInput.value = ''; 
+        });
+
         zonaArrastre.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         zonaArrastre.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
         zonaArrastre.addEventListener('drop', (e) => {
@@ -163,7 +171,6 @@
             }
         });
 
-        // --- Evento Pegar (Ctrl+V) en toda la ventana ---
         document.addEventListener('paste', (e) => {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let index in items) {
@@ -175,7 +182,7 @@
             }
         });
 
-        // --- Gestor de Archivos y Miniaturas Clasificadas ---
+        // --- Gestor de Archivos y Miniaturas ---
         function agregarArchivo(file) {
             const urlTemporal = URL.createObjectURL(file);
             const id = Date.now() + Math.random();
@@ -185,15 +192,12 @@
             dropZone.style.display = 'none';
             previewContainer.style.display = 'flex';
             
-            // Contenedor del ítem
             const wrapper = document.createElement('div');
             wrapper.className = 'galeria-item';
             wrapper.dataset.id = id;
             
-            // Miniatura interactiva
             const thumb = document.createElement(file.type.startsWith('image/') ? 'img' : 'div');
             thumb.className = 'thumb';
-            
             if (file.type.startsWith('image/')) {
                 thumb.src = urlTemporal;
             } else {
@@ -202,29 +206,21 @@
             }
             thumb.onclick = () => mostrarArchivo(id);
 
-            // Menú desplegable clasificador
-            const selectClase = document.createElement('select');
-            selectClase.className = 'doc-tipo';
-            selectClase.innerHTML = `
-                <option value="RIF">RIF</option>
-                <option value="Planilla">Planilla</option>
-                <option value="Correo">Correo</option>
-                <option value="Banco">Banco</option>
-                <option value="Otros">Otros</option>
-            `;
-            
-            // Autoselección inteligente según el orden de subida
-            if(archivosMemoria.length === 1) selectClase.value = "RIF";
-            else if(archivosMemoria.length === 2) selectClase.value = "Correo";
-            else selectClase.value = "Otros";
+            const btnEliminar = document.createElement('button');
+            btnEliminar.className = 'btn-eliminar';
+            btnEliminar.innerHTML = '×';
+            btnEliminar.title = "Eliminar archivo";
+            btnEliminar.onclick = (e) => {
+                e.stopPropagation();
+                eliminarArchivo(id);
+            };
 
             wrapper.appendChild(thumb);
-            wrapper.appendChild(selectClase);
+            wrapper.appendChild(btnEliminar);
             galeria.appendChild(wrapper);
             
             mostrarArchivo(id);
 
-            // Iniciar OCR
             if (file.type.startsWith('image/')) {
                 ejecutarOCR(file);
             } else if (file.type === 'application/pdf') {
@@ -239,6 +235,25 @@
             
             const archivo = archivosMemoria.find(a => a.id === id);
             if (archivo) preview.src = archivo.url;
+        }
+
+        function eliminarArchivo(id) {
+            const index = archivosMemoria.findIndex(a => a.id === id);
+            if (index > -1) {
+                URL.revokeObjectURL(archivosMemoria[index].url);
+                archivosMemoria.splice(index, 1);
+            }
+            
+            const item = document.querySelector(`.galeria-item[data-id="${id}"]`);
+            if (item) item.remove();
+            
+            if (archivosMemoria.length === 0) {
+                previewContainer.style.display = 'none';
+                dropZone.style.display = 'flex';
+                preview.src = '';
+            } else {
+                mostrarArchivo(archivosMemoria[archivosMemoria.length - 1].id);
+            }
         }
 
         // --- Conversión PDF ---
@@ -423,6 +438,9 @@
                     resultadoCrm.innerText = textoCrm + "\n\n(Copia este texto para tu sistema)";
                     
                     form.reset();
+                    
+                    // Liberar URLs temporales
+                    archivosMemoria.forEach(a => URL.revokeObjectURL(a.url));
                     archivosMemoria = [];
                     galeria.innerHTML = '';
                     previewContainer.style.display = 'none';
