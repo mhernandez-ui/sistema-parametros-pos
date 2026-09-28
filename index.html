@@ -177,7 +177,7 @@
             fileReader.readAsArrayBuffer(file);
         }
 
-        // Ejecución OCR y captura de datos (RIF, Nombre, Dirección, Afiliado)
+       // Ejecución OCR y captura de datos (RIF, Nombre, Dirección, Afiliado)
         async function ejecutarOCR(imagenOSource) {
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "Leyendo datos... 🔍";
@@ -204,31 +204,48 @@
                         document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}`;
                         
                         let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
-                        // Cortar texto si encuentra la palabra FECHA
                         restoDeLinea = restoDeLinea.split(/FECHA/i)[0].trim();
 
                         if (restoDeLinea.length > 3) {
                             document.getElementById('comercio').value = restoDeLinea;
                         } else if (i + 1 < lineas.length) {
                             let lineaSiguiente = lineas[i + 1].split(/FECHA/i)[0].trim();
-                            if (!lineaSiguiente.toUpperCase().includes('DOMICILIO')) {
+                            if (!lineaSiguiente.toUpperCase().includes('DOMICILIO') && !lineaSiguiente.toUpperCase().includes('DIRECCIÓN')) {
                                 document.getElementById('comercio').value = lineaSiguiente;
                             }
                         }
                     }
                     
-                    // 2. Extraer Dirección Fiscal
-                    if (lineaUpper.includes('DOMICILIO FISCAL')) {
+                    // 2. Extraer Dirección Fiscal (Adaptado a ZONA POSTAL)
+                    if (lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
                         capturandoDireccion = true;
-                        direccionFiscal += linea.replace(/DOMICILIO FISCAL[\s:]*/ig, '').split(/FECHA/i)[0].trim() + " ";
+                        
+                        // Limpiar la etiqueta inicial y cualquier fecha a la derecha
+                        let fragmento = linea.replace(/(DOMICILIO FISCAL|DIRECCIÓN FISCAL|DIRECCION FISCAL)[\s:]*/ig, '').split(/FECHA/i)[0].trim();
+                        
+                        if (fragmento) {
+                            direccionFiscal += fragmento + " ";
+                        }
+                        
+                        // Si la zona postal está en la misma línea inicial, detener
+                        if (fragmento.toUpperCase().match(/ZONA POSTAL\s*\d+/)) {
+                            capturandoDireccion = false;
+                        }
                         continue; 
                     }
 
                     if (capturandoDireccion) {
-                        if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES') || lineaUpper.includes('FECHA')) {
+                        // Criterios de parada secundarios de seguridad
+                        if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES')) {
                             capturandoDireccion = false;
                         } else {
-                            direccionFiscal += linea.split(/FECHA/i)[0].trim() + " ";
+                            let fragmento = linea.split(/FECHA/i)[0].trim();
+                            direccionFiscal += fragmento + " ";
+                            
+                            // Criterio de parada principal: ZONA POSTAL XXXX
+                            if (fragmento.toUpperCase().match(/ZONA POSTAL\s*\d+/)) {
+                                capturandoDireccion = false;
+                            }
                         }
                     }
 
@@ -252,7 +269,6 @@
                 btnProcesar.disabled = false;
             }
         }
-
         // Envío de datos a Google Sheets
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
