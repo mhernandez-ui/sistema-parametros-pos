@@ -5,23 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carga de Parámetros POS - Credicard</title>
     
-    <!-- Tesseract.js (OCR) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <!-- PDF.js (Lector PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    </script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background-color: #f4f7f6; }
+        
+        /* Visor y Galería */
         .visor { flex: 1; border-right: 2px solid #ccc; display: flex; flex-direction: column; background: #e9ecef; position: relative;}
         .drop-zone { flex: 1; display: flex; align-items: center; justify-content: center; border: 3px dashed #6c757d; margin: 20px; border-radius: 10px; color: #6c757d; font-size: 1.2rem; cursor: pointer; transition: 0.3s; text-align: center; padding: 20px;}
         .drop-zone.dragover { background: #dee2e6; border-color: #495057; }
-        #preview { width: 100%; height: 100%; display: none; border: none; }
+        #preview-container { flex: 1; display: none; padding: 10px; flex-direction: column;}
+        #preview { width: 100%; height: 100%; border: none; flex: 1; background: #fff;}
         #ocr-loading { display: none; position: absolute; top: 10px; right: 10px; background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 10;}
         
+        /* Miniaturas */
+        .galeria { height: 80px; display: flex; gap: 10px; padding: 10px 0 0 0; overflow-x: auto; border-top: 1px solid #ccc; margin-top: 10px;}
+        .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff;}
+        .thumb.active { border-color: #0d6efd; }
+        .thumb.pdf-icon { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: #dc3545; background: #fff;}
+
+        /* Formulario */
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85rem; color: #333; }
@@ -36,13 +41,18 @@
 </head>
 <body>
 
-    <div class="visor">
+    <div class="visor" id="zona-arrastre">
         <div id="ocr-loading">Analizando documento... 🔍</div>
+        
         <div class="drop-zone" id="drop-zone">
-            Arrastra aquí el PDF o Imagen de la solicitud<br>
-            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Lectura OCR automática y adaptativa.</span>
+            Arrastra archivos o pega (Ctrl+V) imágenes aquí<br>
+            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Soporta RIF, correos y múltiples documentos.</span>
         </div>
-        <iframe id="preview"></iframe>
+        
+        <div id="preview-container">
+            <iframe id="preview"></iframe>
+            <div class="galeria" id="galeria"></div>
+        </div>
     </div>
 
     <div class="formulario">
@@ -66,6 +76,17 @@
                 <div class="form-group">
                     <label>Nº Afiliado</label>
                     <input type="text" id="afiliado" placeholder="Ej: 73497418" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" id="telefono" placeholder="Ej: 0414-1234567">
+                </div>
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="correo" placeholder="Ej: contacto@empresa.com">
                 </div>
             </div>
 
@@ -116,56 +137,98 @@
     <script>
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
         
+        const zonaArrastre = document.getElementById('zona-arrastre');
         const dropZone = document.getElementById('drop-zone');
+        const previewContainer = document.getElementById('preview-container');
         const preview = document.getElementById('preview');
+        const galeria = document.getElementById('galeria');
         const form = document.getElementById('param-form');
         const resultadoCrm = document.getElementById('resultado-crm');
         const btnProcesar = document.getElementById('btn-procesar');
         const ocrLoading = document.getElementById('ocr-loading');
-        let archivoSeleccionado = null;
-
-        // --- Drag & Drop ---
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
         
-        dropZone.addEventListener('drop', async (e) => {
+        let archivosMemoria = [];
+
+        // --- Eventos Drag & Drop en todo el visor ---
+        zonaArrastre.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        zonaArrastre.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
+        zonaArrastre.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
-            
             if (e.dataTransfer.files.length > 0) {
-                archivoSeleccionado = e.dataTransfer.files[0];
-                const urlTemporal = URL.createObjectURL(archivoSeleccionado);
-                dropZone.style.display = 'none';
-                preview.style.display = 'block';
-                preview.src = urlTemporal;
+                Array.from(e.dataTransfer.files).forEach(agregarArchivo);
+            }
+        });
 
-                // Limpiar formulario antes de una nueva lectura
-                document.getElementById('comercio').value = "";
-                document.getElementById('direccion').value = "";
-                document.getElementById('rif').value = "";
-                document.getElementById('afiliado').value = "";
-
-                if (archivoSeleccionado.type.startsWith('image/')) {
-                    ejecutarOCR(archivoSeleccionado);
-                } else if (archivoSeleccionado.type === 'application/pdf') {
-                    procesarPDF(archivoSeleccionado);
+        // --- Evento Pegar (Ctrl+V) en toda la ventana ---
+        document.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file') {
+                    const blob = item.getAsFile();
+                    agregarArchivo(blob);
                 }
             }
         });
+
+        // --- Gestor de Archivos y Miniaturas ---
+        function agregarArchivo(file) {
+            const urlTemporal = URL.createObjectURL(file);
+            const id = Date.now() + Math.random();
+            
+            archivosMemoria.push({ id, file, url: urlTemporal });
+            
+            dropZone.style.display = 'none';
+            previewContainer.style.display = 'flex';
+            
+            // Crear miniatura
+            const thumb = document.createElement(file.type.startsWith('image/') ? 'img' : 'div');
+            thumb.className = 'thumb';
+            thumb.dataset.id = id;
+            
+            if (file.type.startsWith('image/')) {
+                thumb.src = urlTemporal;
+            } else {
+                thumb.classList.add('pdf-icon');
+                thumb.innerText = "PDF";
+            }
+
+            thumb.onclick = () => mostrarArchivo(id);
+            galeria.appendChild(thumb);
+            
+            mostrarArchivo(id); // Mostrar el recién agregado
+
+            // Iniciar OCR adaptativo
+            if (file.type.startsWith('image/')) {
+                ejecutarOCR(file);
+            } else if (file.type === 'application/pdf') {
+                procesarPDF(file);
+            }
+        }
+
+        function mostrarArchivo(id) {
+            // Actualizar clase activa en miniaturas
+            document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+            const activeThumb = document.querySelector(`.thumb[data-id="${id}"]`);
+            if(activeThumb) activeThumb.classList.add('active');
+            
+            // Cargar en el Iframe
+            const archivo = archivosMemoria.find(a => a.id === id);
+            if (archivo) preview.src = archivo.url;
+        }
 
         // --- Conversión PDF ---
         async function procesarPDF(file) {
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "Convirtiendo PDF... 📄";
-            btnProcesar.disabled = true;
-
             const fileReader = new FileReader();
             fileReader.onload = async function() {
                 try {
                     const typedarray = new Uint8Array(this.result);
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
                     const page = await pdf.getPage(1);
-                    const scale = 2.5; // Alta resolución para mejorar el OCR
+                    const scale = 2.5; 
                     const viewport = page.getViewport({scale: scale});
                     
                     const canvas = document.createElement('canvas');
@@ -174,18 +237,15 @@
                     canvas.width = viewport.width;
                     
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    const imageBase64 = canvas.toDataURL('image/png');
-                    
-                    ejecutarOCR(imageBase64);
+                    ejecutarOCR(canvas.toDataURL('image/png'));
                 } catch (error) {
                     ocrLoading.style.display = 'none';
-                    btnProcesar.disabled = false;
                 }
             };
             fileReader.readAsArrayBuffer(file);
         }
 
-        // --- Motor Central de OCR y Máquina de Estados ---
+        // --- Motor OCR Acumulativo ---
         async function ejecutarOCR(imagenOSource) {
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "IA leyendo imagen... 🔍";
@@ -193,34 +253,45 @@
 
             try {
                 const result = await Tesseract.recognize(imagenOSource, 'spa');
+                const textoPlano = result.data.text;
+                const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
-                const lineas = result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                // --- 1. Extracción de Teléfono y Correo (Ideal para Screenshots de correo) ---
+                // Regex Correo
+                const matchCorreo = textoPlano.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                if (matchCorreo && !document.getElementById('correo').value) {
+                    document.getElementById('correo').value = matchCorreo[0];
+                }
+
+                // Regex Teléfono (Formatos venezolanos: 0414, 0212, etc.)
+                const matchTelefono = textoPlano.match(/(?:04\d{2}|02\d{2})[\s\-]?\d{3}[\s\-]?\d{4}/);
+                if (matchTelefono && !document.getElementById('telefono').value) {
+                    document.getElementById('telefono').value = matchTelefono[0].replace(/\s/g, '');
+                }
+
+                // --- 2. Máquina de Estados (RIF, Nombre, Dirección) ---
                 const regexRifExact = /[JGVE]-?\d{8,9}/i;
-                
                 let estadoLectura = "BUSCANDO_RIF";
                 let direccionFiscal = "";
 
                 for (let i = 0; i < lineas.length; i++) {
-                    // Cortafuegos ampliado: ignorar lado derecho del documento (incluyendo palabras de sedes regionales)
                     let linea = lineas[i].split(/(FECHA|ÚLTIMA|ULTIMA|N° COMP|N\* COMP|N°COMP|GERENCIA|DATOS DE REGISTRO|IDENTIFICACIÓN DEL CONTRIBUYENTE|TRIBUTOS|SEDE REGIONAL|INTERNOS)/i)[0].trim();
                     if (!linea) continue;
 
                     const lineaUpper = linea.toUpperCase();
 
-                    // --- ESTADO 1: Extraer RIF ---
+                    // RIF
                     if (estadoLectura === "BUSCANDO_RIF") {
                         const matchRif = linea.match(regexRifExact);
                         if (matchRif) {
                             let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
-                            if (rifLimpio.length === 10) {
-                                document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}`;
-                            } else {
-                                document.getElementById('rif').value = rifLimpio; 
+                            if (!document.getElementById('rif').value) {
+                                document.getElementById('rif').value = rifLimpio.length === 10 ? `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}` : rifLimpio;
                             }
                             
                             let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
                             if (restoDeLinea.length > 3) {
-                                document.getElementById('comercio').value = restoDeLinea;
+                                if (!document.getElementById('comercio').value) document.getElementById('comercio').value = restoDeLinea;
                                 estadoLectura = "BUSCANDO_DOMICILIO";
                             } else {
                                 estadoLectura = "BUSCANDO_NOMBRE";
@@ -229,11 +300,11 @@
                         }
                     }
 
-                    // --- ESTADO 2: Extraer Nombre del Comercio (Formato Nuevo) ---
+                    // NOMBRE
                     if (estadoLectura === "BUSCANDO_NOMBRE") {
                         if (!lineaUpper.includes('DOMICILIO') && !lineaUpper.includes('DIRECCIÓN')) {
                             if (linea.length > 3) {
-                                document.getElementById('comercio').value = linea;
+                                if (!document.getElementById('comercio').value) document.getElementById('comercio').value = linea;
                                 estadoLectura = "BUSCANDO_DOMICILIO";
                                 continue;
                             }
@@ -242,14 +313,13 @@
                         }
                     }
                     
-                    // --- ESTADO 3: Detectar inicio de Dirección ---
-                    if (estadoLectura === "BUSCANDO_DOMICILIO" || lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
+                    // DIRECCIÓN INICIO
+                    if (estadoLectura === "BUSCANDO_DOMICILIO" || lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL')) {
                         if (lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
                             estadoLectura = "CAPTURANDO_DIRECCION";
                             let fragmento = linea.replace(/(DOMICILIO FISCAL|DIRECCIÓN FISCAL|DIRECCION FISCAL)[\s:]*/ig, '').trim();
                             
                             if (fragmento) { 
-                                // Corte exacto en Zona Postal
                                 let matchZona = fragmento.match(/(ZONA POSTAL\s*\d+)/i);
                                 if (matchZona) { 
                                     direccionFiscal += fragmento.substring(0, matchZona.index + matchZona[0].length) + " ";
@@ -262,12 +332,11 @@
                         }
                     }
 
-                    // --- ESTADO 4: Recolectar Líneas de la Dirección ---
+                    // DIRECCIÓN CONTINUACIÓN
                     if (estadoLectura === "CAPTURANDO_DIRECCION") {
                         if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES')) {
                             estadoLectura = "BUSCANDO_AFILIADO";
                         } else {
-                            // Corte exacto en Zona Postal para evitar leer la columna derecha
                             let matchZona = linea.match(/(ZONA POSTAL\s*\d+)/i);
                             if (matchZona) { 
                                 direccionFiscal += linea.substring(0, matchZona.index + matchZona[0].length) + " ";
@@ -279,27 +348,27 @@
                         continue;
                     }
 
-                    // --- SIEMPRE ACTIVO: Extraer Afiliado ---
+                    // AFILIADO
                     const regexAfiliado = /afiliado[\s:]*(\d{7,10})/i;
                     const matchAfiliado = linea.match(regexAfiliado);
-                    if (matchAfiliado) {
+                    if (matchAfiliado && !document.getElementById('afiliado').value) {
                         document.getElementById('afiliado').value = matchAfiliado[1];
                     }
                 }
 
-                if (direccionFiscal) {
+                if (direccionFiscal && !document.getElementById('direccion').value) {
                     document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
                 }
 
             } catch (error) {
-                console.error("Error en Tesseract:", error);
+                console.error("Error OCR:", error);
             } finally {
                 ocrLoading.style.display = 'none';
                 btnProcesar.disabled = false;
             }
         }
 
-        // --- Enviar Formulario ---
+        // --- Enviar Formulario y Limpiar Memoria ---
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             btnProcesar.innerText = "Registrando...";
@@ -310,6 +379,8 @@
                 direccion: document.getElementById('direccion').value,
                 rif: document.getElementById('rif').value,
                 afiliado: document.getElementById('afiliado').value,
+                telefono: document.getElementById('telefono').value,
+                correo: document.getElementById('correo').value,
                 banco: document.getElementById('banco').value,
                 modelo: document.getElementById('modelo').value,
                 comunicacion: document.getElementById('comunicacion').value,
@@ -326,19 +397,21 @@
                 const resultado = await response.json();
                 
                 if(resultado.status === "éxito") {
-                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nDirección: ${datosParaGuardar.direccion}\nAfiliado: ${datosParaGuardar.afiliado}\nBanco: ${datosParaGuardar.banco}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
+                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nDirección: ${datosParaGuardar.direccion}\nTeléfono: ${datosParaGuardar.telefono}\nCorreo: ${datosParaGuardar.correo}\nAfiliado: ${datosParaGuardar.afiliado}\nBanco: ${datosParaGuardar.banco}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
                     resultadoCrm.style.display = 'block';
                     resultadoCrm.innerText = textoCrm + "\n\n(Copia este texto para tu sistema)";
                     
+                    // Resetear todo
                     form.reset();
-                    preview.style.display = 'none';
+                    archivosMemoria = [];
+                    galeria.innerHTML = '';
+                    previewContainer.style.display = 'none';
                     dropZone.style.display = 'flex';
-                    archivoSeleccionado = null;
                 } else {
                     alert("Error en el script: " + resultado.mensaje);
                 }
             } catch (error) {
-                alert("Fallo de conexión. Verifica que tengas internet y la URL sea correcta.");
+                alert("Fallo de conexión.");
             } finally {
                 btnProcesar.innerText = "Cargar a Sheets y Generar CRM";
                 btnProcesar.disabled = false;
