@@ -194,7 +194,6 @@
             try {
                 const result = await Tesseract.recognize(imagenOSource, 'spa');
                 
-                // Eliminamos líneas vacías para no procesar los espacios en blanco
                 const lineas = result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 const regexRifExact = /[JGVE]-?\d{8,9}/i;
                 
@@ -202,8 +201,8 @@
                 let direccionFiscal = "";
 
                 for (let i = 0; i < lineas.length; i++) {
-                    // Cortafuegos: ignorar lado derecho del documento
-                    let linea = lineas[i].split(/(FECHA|ÚLTIMA|ULTIMA|N° COMP|N\* COMP|N°COMP|GERENCIA|DATOS DE REGISTRO|IDENTIFICACIÓN DEL CONTRIBUYENTE)/i)[0].trim();
+                    // Cortafuegos ampliado: ignorar lado derecho del documento (incluyendo palabras de sedes regionales)
+                    let linea = lineas[i].split(/(FECHA|ÚLTIMA|ULTIMA|N° COMP|N\* COMP|N°COMP|GERENCIA|DATOS DE REGISTRO|IDENTIFICACIÓN DEL CONTRIBUYENTE|TRIBUTOS|SEDE REGIONAL|INTERNOS)/i)[0].trim();
                     if (!linea) continue;
 
                     const lineaUpper = linea.toUpperCase();
@@ -219,7 +218,6 @@
                                 document.getElementById('rif').value = rifLimpio; 
                             }
                             
-                            // Comprobar si el nombre está en esta misma línea (Formato Viejo)
                             let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
                             if (restoDeLinea.length > 3) {
                                 document.getElementById('comercio').value = restoDeLinea;
@@ -240,7 +238,7 @@
                                 continue;
                             }
                         } else {
-                            estadoLectura = "BUSCANDO_DOMICILIO"; // Failsafe
+                            estadoLectura = "BUSCANDO_DOMICILIO"; 
                         }
                     }
                     
@@ -251,9 +249,13 @@
                             let fragmento = linea.replace(/(DOMICILIO FISCAL|DIRECCIÓN FISCAL|DIRECCION FISCAL)[\s:]*/ig, '').trim();
                             
                             if (fragmento) { 
-                                direccionFiscal += fragmento + " "; 
-                                if (fragmento.toUpperCase().match(/ZONA POSTAL\s*\d+/)) { 
+                                // Corte exacto en Zona Postal
+                                let matchZona = fragmento.match(/(ZONA POSTAL\s*\d+)/i);
+                                if (matchZona) { 
+                                    direccionFiscal += fragmento.substring(0, matchZona.index + matchZona[0].length) + " ";
                                     estadoLectura = "BUSCANDO_AFILIADO"; 
+                                } else {
+                                    direccionFiscal += fragmento + " "; 
                                 }
                             }
                             continue; 
@@ -265,9 +267,13 @@
                         if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES')) {
                             estadoLectura = "BUSCANDO_AFILIADO";
                         } else {
-                            direccionFiscal += linea + " ";
-                            if (lineaUpper.match(/ZONA POSTAL\s*\d+/)) { 
+                            // Corte exacto en Zona Postal para evitar leer la columna derecha
+                            let matchZona = linea.match(/(ZONA POSTAL\s*\d+)/i);
+                            if (matchZona) { 
+                                direccionFiscal += linea.substring(0, matchZona.index + matchZona[0].length) + " ";
                                 estadoLectura = "BUSCANDO_AFILIADO"; 
+                            } else {
+                                direccionFiscal += linea + " ";
                             }
                         }
                         continue;
@@ -281,7 +287,6 @@
                     }
                 }
 
-                // Escribir la dirección consolidada en el input
                 if (direccionFiscal) {
                     document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
                 }
