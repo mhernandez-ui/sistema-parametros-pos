@@ -17,14 +17,16 @@
         .drop-zone { flex: 1; display: flex; align-items: center; justify-content: center; border: 3px dashed #6c757d; margin: 20px; border-radius: 10px; color: #6c757d; font-size: 1.2rem; cursor: pointer; transition: 0.3s; text-align: center; padding: 20px;}
         .drop-zone.dragover { background: #dee2e6; border-color: #495057; }
         #preview-container { flex: 1; display: none; padding: 10px; flex-direction: column;}
-        #preview { width: 100%; height: 100%; border: none; flex: 1; background: #fff;}
+        #preview { width: 100%; height: 100%; border: none; flex: 1; background: #fff; border-radius: 5px;}
         #ocr-loading { display: none; position: absolute; top: 10px; right: 10px; background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 10;}
         
-        /* Miniaturas */
-        .galeria { height: 80px; display: flex; gap: 10px; padding: 10px 0 0 0; overflow-x: auto; border-top: 1px solid #ccc; margin-top: 10px;}
-        .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff;}
-        .thumb.active { border-color: #0d6efd; }
+        /* Miniaturas con Selectores */
+        .galeria { height: 95px; display: flex; gap: 12px; padding: 10px 5px 0 5px; overflow-x: auto; border-top: 1px solid #ccc; margin-top: 10px;}
+        .galeria-item { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 70px;}
+        .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff; transition: 0.2s;}
+        .thumb.active { border-color: #0d6efd; transform: scale(1.05);}
         .thumb.pdf-icon { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: #dc3545; background: #fff;}
+        .doc-tipo { font-size: 0.7rem; padding: 2px; border-radius: 3px; border: 1px solid #ccc; width: 100%; text-align: center; cursor: pointer;}
 
         /* Formulario */
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
@@ -46,7 +48,7 @@
         
         <div class="drop-zone" id="drop-zone">
             Arrastra archivos o pega (Ctrl+V) imágenes aquí<br>
-            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Soporta RIF, correos y múltiples documentos.</span>
+            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Puedes cargar múltiples documentos simultáneamente.</span>
         </div>
         
         <div id="preview-container">
@@ -135,6 +137,7 @@
     </div>
 
     <script>
+        // RECUERDA VERIFICAR QUE ESTA SEA TU URL ACTIVA DE GOOGLE SCRIPT
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
         
         const zonaArrastre = document.getElementById('zona-arrastre');
@@ -172,7 +175,7 @@
             }
         });
 
-        // --- Gestor de Archivos y Miniaturas ---
+        // --- Gestor de Archivos y Miniaturas Clasificadas ---
         function agregarArchivo(file) {
             const urlTemporal = URL.createObjectURL(file);
             const id = Date.now() + Math.random();
@@ -182,10 +185,14 @@
             dropZone.style.display = 'none';
             previewContainer.style.display = 'flex';
             
-            // Crear miniatura
+            // Contenedor del ítem
+            const wrapper = document.createElement('div');
+            wrapper.className = 'galeria-item';
+            wrapper.dataset.id = id;
+            
+            // Miniatura interactiva
             const thumb = document.createElement(file.type.startsWith('image/') ? 'img' : 'div');
             thumb.className = 'thumb';
-            thumb.dataset.id = id;
             
             if (file.type.startsWith('image/')) {
                 thumb.src = urlTemporal;
@@ -193,13 +200,31 @@
                 thumb.classList.add('pdf-icon');
                 thumb.innerText = "PDF";
             }
-
             thumb.onclick = () => mostrarArchivo(id);
-            galeria.appendChild(thumb);
-            
-            mostrarArchivo(id); // Mostrar el recién agregado
 
-            // Iniciar OCR adaptativo
+            // Menú desplegable clasificador
+            const selectClase = document.createElement('select');
+            selectClase.className = 'doc-tipo';
+            selectClase.innerHTML = `
+                <option value="RIF">RIF</option>
+                <option value="Planilla">Planilla</option>
+                <option value="Correo">Correo</option>
+                <option value="Banco">Banco</option>
+                <option value="Otros">Otros</option>
+            `;
+            
+            // Autoselección inteligente según el orden de subida
+            if(archivosMemoria.length === 1) selectClase.value = "RIF";
+            else if(archivosMemoria.length === 2) selectClase.value = "Correo";
+            else selectClase.value = "Otros";
+
+            wrapper.appendChild(thumb);
+            wrapper.appendChild(selectClase);
+            galeria.appendChild(wrapper);
+            
+            mostrarArchivo(id);
+
+            // Iniciar OCR
             if (file.type.startsWith('image/')) {
                 ejecutarOCR(file);
             } else if (file.type === 'application/pdf') {
@@ -208,12 +233,10 @@
         }
 
         function mostrarArchivo(id) {
-            // Actualizar clase activa en miniaturas
             document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
-            const activeThumb = document.querySelector(`.thumb[data-id="${id}"]`);
+            const activeThumb = document.querySelector(`.galeria-item[data-id="${id}"] .thumb`);
             if(activeThumb) activeThumb.classList.add('active');
             
-            // Cargar en el Iframe
             const archivo = archivosMemoria.find(a => a.id === id);
             if (archivo) preview.src = archivo.url;
         }
@@ -256,20 +279,18 @@
                 const textoPlano = result.data.text;
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
-                // --- 1. Extracción de Teléfono y Correo (Ideal para Screenshots de correo) ---
-                // Regex Correo
+                // 1. Extracción de Teléfono y Correo
                 const matchCorreo = textoPlano.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
                 if (matchCorreo && !document.getElementById('correo').value) {
                     document.getElementById('correo').value = matchCorreo[0];
                 }
 
-                // Regex Teléfono (Formatos venezolanos: 0414, 0212, etc.)
                 const matchTelefono = textoPlano.match(/(?:04\d{2}|02\d{2})[\s\-]?\d{3}[\s\-]?\d{4}/);
                 if (matchTelefono && !document.getElementById('telefono').value) {
                     document.getElementById('telefono').value = matchTelefono[0].replace(/\s/g, '');
                 }
 
-                // --- 2. Máquina de Estados (RIF, Nombre, Dirección) ---
+                // 2. Máquina de Estados (RIF, Nombre, Dirección)
                 const regexRifExact = /[JGVE]-?\d{8,9}/i;
                 let estadoLectura = "BUSCANDO_RIF";
                 let direccionFiscal = "";
@@ -401,7 +422,6 @@
                     resultadoCrm.style.display = 'block';
                     resultadoCrm.innerText = textoCrm + "\n\n(Copia este texto para tu sistema)";
                     
-                    // Resetear todo
                     form.reset();
                     archivosMemoria = [];
                     galeria.innerHTML = '';
