@@ -177,8 +177,7 @@
             fileReader.readAsArrayBuffer(file);
         }
 
-        // Ejecuta la lectura de texto (sirve tanto para imágenes puras como para el PDF convertido)
-       // Ejecuta la lectura de texto
+       // Ejecuta la lectura de texto (sirve tanto para imágenes puras como para el PDF convertido)
         async function ejecutarOCR(imagenOSource) {
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "Leyendo datos... 🔍";
@@ -188,49 +187,41 @@
                 const result = await Tesseract.recognize(imagenOSource, 'spa');
                 const textoLeido = result.data.text;
                 
-                // 1. Extraer RIF
-                const regexRif = /[JGVE]-?\d{8}-?\d/i;
-                const matchRif = textoLeido.match(regexRif);
-                if(matchRif) {
-                    let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
-                    document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}`;
-                }
-
-                // 2. Extraer Afiliado
-                const regexAfiliado = /afiliado[\s:]*(\d{7,10})/i;
-                const matchAfiliado = textoLeido.match(regexAfiliado);
-                if(matchAfiliado) {
-                    document.getElementById('afiliado').value = matchAfiliado[1];
-                }
-
-                // 3. Extraer Nombre del Comercio / Razón Social (Formato SENIAT)
-                // Dividimos el texto en líneas para analizar línea por línea
+                // Dividimos el texto en líneas limpias para analizar el contexto
                 const lineas = textoLeido.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                const regexRifExact = /[JGVE]-?\d{8}-?\d/i;
                 
                 for (let i = 0; i < lineas.length; i++) {
-                    const lineaUpper = lineas[i].toUpperCase();
-                    
-                    // Buscamos las etiquetas típicas del RIF venezolano
-                    if (lineaUpper.includes('RAZÓN SOCIAL') || lineaUpper.includes('RAZON SOCIAL') || lineaUpper.includes('APELLIDOS Y NOMBRES')) {
+                    const linea = lineas[i];
+                    const matchRif = linea.match(regexRifExact);
+
+                    if (matchRif) {
+                        // 1. Encontramos el RIF: lo limpiamos y lo formateamos
+                        let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}`;
                         
-                        // Primero verificamos si el OCR leyó el nombre en la misma línea
-                        // Ej: "NOMBRE O RAZÓN SOCIAL: INVERSIONES C.A."
-                        let extractoMismaLinea = lineaUpper.replace(/.*(RAZÓN SOCIAL|RAZON SOCIAL|APELLIDOS Y NOMBRES)[\s:]*/g, '').trim();
-                        
-                        if (extractoMismaLinea.length > 4 && !extractoMismaLinea.includes('DOMICILIO')) {
-                            document.getElementById('comercio').value = extractoMismaLinea;
-                            break;
-                        } 
-                        // Si la línea está vacía después de los dos puntos, leemos la línea de abajo
-                        // Ej: "NOMBRE O RAZÓN SOCIAL:" -> (siguiente línea) "INVERSIONES C.A."
-                        else if (i + 1 < lineas.length) {
-                            let lineaSiguiente = lineas[i + 1].toUpperCase();
-                            // Nos aseguramos de no agarrar el domicilio por error
-                            if (!lineaSiguiente.includes('DOMICILIO') && lineaSiguiente.length > 3) {
+                        // 2. Extraer el Nombre del Comercio
+                        // Eliminamos la palabra "RIF" (si existe) y el número de RIF detectado de esa línea
+                        let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
+
+                        if (restoDeLinea.length > 3) {
+                            // Formato 1: El nombre quedó en la misma línea (Ej: V178282006 JESUS RAMON...)
+                            document.getElementById('comercio').value = restoDeLinea;
+                        } else if (i + 1 < lineas.length) {
+                            // Formato 2: La línea quedó vacía, el nombre está abajo (Ej: RIF: J-50783778-5 \n COMERCIANTE EJEMPLAR)
+                            let lineaSiguiente = lineas[i + 1];
+                            // Validamos que no esté leyendo la palabra domicilio o fecha por error
+                            if (!lineaSiguiente.toUpperCase().includes('DOMICILIO') && !lineaSiguiente.toUpperCase().includes('FECHA')) {
                                 document.getElementById('comercio').value = lineaSiguiente;
-                                break;
                             }
                         }
+                    }
+                    
+                    // 3. Extraer Afiliado independientemente de dónde esté
+                    const regexAfiliado = /afiliado[\s:]*(\d{7,10})/i;
+                    const matchAfiliado = linea.match(regexAfiliado);
+                    if (matchAfiliado) {
+                        document.getElementById('afiliado').value = matchAfiliado[1];
                     }
                 }
 
@@ -241,7 +232,6 @@
                 btnProcesar.disabled = false;
             }
         }
-
         // Envío de datos a Google Sheets
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
