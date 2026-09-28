@@ -177,7 +177,7 @@
             fileReader.readAsArrayBuffer(file);
         }
 
-       // Ejecución OCR y captura de datos (RIF, Nombre, Dirección, Afiliado)
+      // Ejecución OCR y captura de datos (RIF, Nombre, Dirección, Afiliado)
         async function ejecutarOCR(imagenOSource) {
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "Leyendo datos... 🔍";
@@ -192,72 +192,76 @@
                 
                 let capturandoDireccion = false;
                 let direccionFiscal = "";
+                let rifEncontrado = false;
 
                 for (let i = 0; i < lineas.length; i++) {
-                    const linea = lineas[i];
-                    const lineaUpper = linea.toUpperCase();
-                    const matchRif = linea.match(regexRifExact);
+                    let lineaBruta = lineas[i];
+                    
+                    // Limpieza agresiva: Cortamos todo lo que pertenezca a la columna derecha
+                    let linea = lineaBruta.split(/(FECHA|DATOS DE REGISTRO|N° COMPROBANTE|Nº COMPROBANTE|GERENCIA|ÚLTIMA|ULTIMA|SEDE)/i)[0].trim();
+                    let lineaUpper = linea.toUpperCase();
+
+                    if(linea.length === 0) continue;
 
                     // 1. Extraer RIF y Nombre del Comercio
-                    if (matchRif) {
-                        let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
-                        document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}`;
+                    const matchRif = linea.match(regexRifExact);
+                    if (matchRif && !rifEncontrado) {
+                        rifEncontrado = true;
                         
-                        let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
-                        restoDeLinea = restoDeLinea.split(/FECHA/i)[0].trim();
+                        // Formatear RIF
+                        let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        document.getElementById('rif').value = `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.substring(9) || '0'}`;
+                        
+                        // Extraer Nombre
+                        let restoDeLinea = lineaUpper.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
 
-                        if (restoDeLinea.length > 3) {
+                        if (restoDeLinea.length > 3 && !restoDeLinea.includes('IDENTIFICACIÓN')) {
                             document.getElementById('comercio').value = restoDeLinea;
                         } else if (i + 1 < lineas.length) {
-                            let lineaSiguiente = lineas[i + 1].split(/FECHA/i)[0].trim();
-                            if (!lineaSiguiente.toUpperCase().includes('DOMICILIO') && !lineaSiguiente.toUpperCase().includes('DIRECCIÓN')) {
+                            // Buscar en la siguiente línea limpiando la columna derecha
+                            let lineaSiguiente = lineas[i + 1].split(/(FECHA|DATOS|N°|GERENCIA|ÚLTIMA|ULTIMA)/i)[0].trim();
+                            if (!lineaSiguiente.toUpperCase().includes('DOMICILIO') && lineaSiguiente.length > 3) {
                                 document.getElementById('comercio').value = lineaSiguiente;
                             }
                         }
                     }
                     
-                    // 2. Extraer Dirección Fiscal (Adaptado a ZONA POSTAL)
+                    // 2. Extraer Dirección Fiscal
                     if (lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
                         capturandoDireccion = true;
-                        
-                        // Limpiar la etiqueta inicial y cualquier fecha a la derecha
-                        let fragmento = linea.replace(/(DOMICILIO FISCAL|DIRECCIÓN FISCAL|DIRECCION FISCAL)[\s:]*/ig, '').split(/FECHA/i)[0].trim();
+                        let fragmento = lineaUpper.replace(/(DOMICILIO FISCAL|DIRECCIÓN FISCAL|DIRECCION FISCAL)[\s:]*/ig, '').trim();
                         
                         if (fragmento) {
                             direccionFiscal += fragmento + " ";
                         }
-                        
-                        // Si la zona postal está en la misma línea inicial, detener
-                        if (fragmento.toUpperCase().match(/ZONA POSTAL\s*\d+/)) {
+                        // Detener si ZONA POSTAL está en la misma línea inicial
+                        if (fragmento.match(/ZONA POSTAL\s*\d+/)) {
                             capturandoDireccion = false;
                         }
                         continue; 
                     }
 
                     if (capturandoDireccion) {
-                        // Criterios de parada secundarios de seguridad
+                        // Criterios de parada secundarios
                         if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES')) {
                             capturandoDireccion = false;
                         } else {
-                            let fragmento = linea.split(/FECHA/i)[0].trim();
-                            direccionFiscal += fragmento + " ";
-                            
-                            // Criterio de parada principal: ZONA POSTAL XXXX
-                            if (fragmento.toUpperCase().match(/ZONA POSTAL\s*\d+/)) {
+                            direccionFiscal += linea + " ";
+                            // Criterio de parada principal
+                            if (lineaUpper.match(/ZONA POSTAL\s*\d+/)) {
                                 capturandoDireccion = false;
                             }
                         }
                     }
 
-                    // 3. Extraer Número de Afiliado
+                    // 3. Extraer Número de Afiliado (Se busca en la línea sin cortar por si acaso)
                     const regexAfiliado = /afiliado[\s:]*(\d{7,10})/i;
-                    const matchAfiliado = linea.match(regexAfiliado);
+                    const matchAfiliado = lineaBruta.match(regexAfiliado);
                     if (matchAfiliado) {
                         document.getElementById('afiliado').value = matchAfiliado[1];
                     }
                 }
 
-                // Colocar la dirección extraída en el formulario
                 if (direccionFiscal) {
                     document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
                 }
