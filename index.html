@@ -204,7 +204,7 @@
         // --- Controles de Zoom ---
         function cambiarZoom(incremento) {
             zoomActual += incremento;
-            if (zoomActual < 0.4) zoomActual = 0.4; // Límite de reducción
+            if (zoomActual < 0.4) zoomActual = 0.4; 
             previewImg.style.transform = `scale(${zoomActual})`;
         }
         function resetZoom() {
@@ -410,7 +410,6 @@
                 }
 
                 if (tipoDoc === 'RIF') {
-                    // Limpiar lista de firmas anteriores
                     const listaFirmas = document.getElementById('lista-firmas');
                     listaFirmas.innerHTML = '';
                     let arrayFirmas = [];
@@ -505,16 +504,23 @@
                         }
 
                         // --- Captura Dinámica de Firmas Personales ---
+                        // Si encuentra la etiqueta, entra al estado de captura y desecha la etiqueta y su número
                         if (lineaUpper.includes('FIRMAS PERSONALES') && !lineaUpper.includes('NO POSEE')) {
                             estadoLectura = "CAPTURANDO_FIRMAS";
                             continue;
                         }
 
+                        // Captura las líneas que vienen justo debajo de "Firmas Personales"
                         if (estadoLectura === "CAPTURANDO_FIRMAS") {
-                            if (linea.length > 3 && !lineaUpper.includes('SISTEMAS EN LÍNEA') && !lineaUpper.includes('SELLO HÚMEDO')) {
+                            // Freno de emergencia (pie de página del SENIAT)
+                            if (lineaUpper.includes('SISTEMAS EN LÍNEA') || lineaUpper.includes('SELLO HÚMEDO') || lineaUpper.includes('LA CONDICIÓN DE ESTE') || lineaUpper.includes('MINISTERIO')) {
+                                estadoLectura = "FIN"; 
+                                continue;
+                            }
+                            
+                            // Guardamos la firma si tiene contenido real y evitamos que repita la etiqueta
+                            if (linea.length > 3 && !lineaUpper.includes('FIRMAS PERSONALES')) {
                                 arrayFirmas.push(linea);
-                            } else if (lineaUpper.includes('SISTEMAS EN LÍNEA') || lineaUpper.includes('SELLO HÚMEDO')) {
-                                estadoLectura = "FIN"; // Abortar captura al final del documento
                             }
                         }
                     }
@@ -523,7 +529,6 @@
                         document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
                     }
 
-                    // Llenar la lista desplegable de firmas para que el usuario elija
                     if (arrayFirmas.length > 0) {
                         arrayFirmas.forEach(firma => {
                             listaFirmas.innerHTML += `<option value="${firma}">`;
