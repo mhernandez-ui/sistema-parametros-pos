@@ -12,7 +12,20 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background-color: #f4f7f6; }
         
-        .visor { flex: 1; border-right: 2px solid #ccc; display: flex; flex-direction: column; background: #e9ecef; position: relative;}
+        /* Panel Izquierdo Completo */
+        .panel-izquierdo { flex: 1; border-right: 2px solid #ccc; display: flex; flex-direction: column; background: #e9ecef; position: relative; }
+        
+        /* Pestañas de Navegación */
+        .tabs-header { display: flex; background: #dee2e6; border-bottom: 2px solid #ccc; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: none; cursor: pointer; font-weight: bold; color: #6c757d; font-size: 0.95rem; transition: 0.2s; }
+        .tab-btn:hover { background: #e2e6ea; color: #333; }
+        .tab-btn.active { background: #e9ecef; color: #0d6efd; border-bottom: 3px solid #0d6efd; padding-bottom: 9px; }
+
+        /* Contenedores de Pestañas */
+        .tab-content { flex: 1; display: none; flex-direction: column; position: relative; }
+        .tab-content.active { display: flex; }
+
+        /* Visor de Documentos (Pestaña 1) */
         .drop-zone { flex: 1; display: flex; align-items: center; justify-content: center; border: 3px dashed #6c757d; margin: 20px; border-radius: 10px; color: #6c757d; font-size: 1.2rem; cursor: pointer; transition: 0.3s; text-align: center; padding: 20px;}
         .drop-zone.dragover { background: #dee2e6; border-color: #495057; }
         #preview-container { flex: 1; display: none; padding: 10px; flex-direction: column;}
@@ -27,6 +40,10 @@
         .btn-eliminar { position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;}
         .btn-eliminar:hover { background: #bb2d3b; transform: scale(1.1);}
 
+        /* Visor CRM (Pestaña 2) */
+        #crm-frame { width: 100%; height: 100%; border: none; flex: 1; background: #fff;}
+
+        /* Formulario Derecho */
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85rem; color: #333; }
@@ -41,19 +58,36 @@
 </head>
 <body>
 
-    <div class="visor" id="zona-arrastre">
-        <div id="ocr-loading">Analizando documento... 🔍</div>
+    <div class="panel-izquierdo" id="zona-arrastre">
         
-        <input type="file" id="file-input" multiple accept="image/*,application/pdf" style="display: none;">
-        <div class="drop-zone" id="drop-zone">
-            Arrastra, pega (Ctrl+V) o haz clic aquí<br>
-            <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Soporta RIF y capturas de pantalla de correos.</span>
+        <!-- Pestañas de Navegación -->
+        <div class="tabs-header">
+            <button id="btn-tab-docs" class="tab-btn active" onclick="cambiarPestaña('docs')">Documentos Extraídos</button>
+            <button id="btn-tab-crm" class="tab-btn" onclick="cambiarPestaña('crm')">Navegador CRM</button>
         </div>
-        
-        <div id="preview-container">
-            <iframe id="preview"></iframe>
-            <div class="galeria" id="galeria"></div>
+
+        <!-- Contenido Pestaña 1: Documentos y OCR -->
+        <div id="tab-docs" class="tab-content active">
+            <div id="ocr-loading">Analizando documento... 🔍</div>
+            
+            <input type="file" id="file-input" multiple accept="image/*,application/pdf" style="display: none;">
+            <div class="drop-zone" id="drop-zone">
+                Arrastra, pega (Ctrl+V) o haz clic aquí<br>
+                <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; display: block;">Soporta RIF y capturas de pantalla de correos.</span>
+            </div>
+            
+            <div id="preview-container">
+                <iframe id="preview"></iframe>
+                <div class="galeria" id="galeria"></div>
+            </div>
         </div>
+
+        <!-- Contenido Pestaña 2: CRM Embebido -->
+        <div id="tab-crm" class="tab-content">
+            <!-- REEMPLAZA ESTA URL CON LA DIRECCIÓN REAL DE TU CRM -->
+            <iframe id="crm-frame" src="https://tu-crm.com/login"></iframe>
+        </div>
+
     </div>
 
     <div class="formulario">
@@ -146,6 +180,22 @@
     <script>
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
         
+        // --- Control de Pestañas ---
+        function cambiarPestaña(pestaña) {
+            document.getElementById('btn-tab-docs').classList.remove('active');
+            document.getElementById('btn-tab-crm').classList.remove('active');
+            document.getElementById('tab-docs').classList.remove('active');
+            document.getElementById('tab-crm').classList.remove('active');
+
+            if(pestaña === 'docs') {
+                document.getElementById('btn-tab-docs').classList.add('active');
+                document.getElementById('tab-docs').classList.add('active');
+            } else {
+                document.getElementById('btn-tab-crm').classList.add('active');
+                document.getElementById('tab-crm').classList.add('active');
+            }
+        }
+
         const zonaArrastre = document.getElementById('zona-arrastre');
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
@@ -165,23 +215,32 @@
             fileInput.value = ''; 
         });
 
-        zonaArrastre.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        // Solo permitir arrastrar si estamos en la pestaña de documentos
+        zonaArrastre.addEventListener('dragover', (e) => { 
+            if(document.getElementById('tab-docs').classList.contains('active')) {
+                e.preventDefault(); dropZone.classList.add('dragover'); 
+            }
+        });
         zonaArrastre.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
         zonaArrastre.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) {
-                Array.from(e.dataTransfer.files).forEach(agregarArchivo);
+            if(document.getElementById('tab-docs').classList.contains('active')) {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) {
+                    Array.from(e.dataTransfer.files).forEach(agregarArchivo);
+                }
             }
         });
 
         document.addEventListener('paste', (e) => {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let index in items) {
-                const item = items[index];
-                if (item.kind === 'file') {
-                    const blob = item.getAsFile();
-                    agregarArchivo(blob);
+            if(document.getElementById('tab-docs').classList.contains('active')) {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let index in items) {
+                    const item = items[index];
+                    if (item.kind === 'file') {
+                        const blob = item.getAsFile();
+                        agregarArchivo(blob);
+                    }
                 }
             }
         });
@@ -296,7 +355,6 @@
                 const textoUpper = textoPlano.toUpperCase();
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
-                // 1. Extracción General (Teléfono, Correo, Serial, Operadora, Modelo, Afiliado Suelto)
                 const matchCorreo = textoPlano.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
                 if (matchCorreo && !document.getElementById('correo').value) {
                     document.getElementById('correo').value = matchCorreo[0];
@@ -321,14 +379,11 @@
                     document.getElementById('modelo').value = matchModelo[1];
                 }
 
-                // Búsqueda general de Afiliado (Tolera "PENDIENTE" y números de 8 a 10 dígitos)
                 const matchAfiliadoGeneral = textoPlano.match(/(?:c[oó]digo\s+de\s+afiliaci[oó]n|afiliaci[oó]n|afiliado)[\s:=]*(\d{8,10}|PENDIENTE)/i);
                 if (matchAfiliadoGeneral && !document.getElementById('afiliado').value) {
                     document.getElementById('afiliado').value = matchAfiliadoGeneral[1].toUpperCase();
                 }
 
-                // 2. Máquina de Estados Exclusiva (RIF, Nombre Comercial, Dirección)
-                // Se ignora deliberadamente el formato RIF del correo electrónico debido a los puntos en su estructura
                 const regexRifExact = /[JGVE]-?\d{8,9}/i;
                 let estadoLectura = "BUSCANDO_RIF";
                 let direccionFiscal = "";
@@ -339,7 +394,6 @@
 
                     const lineaUpper = linea.toUpperCase();
 
-                    // RIF Oficial
                     if (estadoLectura === "BUSCANDO_RIF") {
                         const matchRif = linea.match(regexRifExact);
                         if (matchRif) {
@@ -359,7 +413,6 @@
                         }
                     }
 
-                    // NOMBRE Oficial
                     if (estadoLectura === "BUSCANDO_NOMBRE") {
                         if (!lineaUpper.includes('DOMICILIO') && !lineaUpper.includes('DIRECCIÓN')) {
                             if (linea.length > 3) {
@@ -372,7 +425,6 @@
                         }
                     }
                     
-                    // DIRECCIÓN Oficial
                     if (estadoLectura === "BUSCANDO_DOMICILIO" || lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL')) {
                         if (lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
                             estadoLectura = "CAPTURANDO_DIRECCION";
@@ -450,7 +502,7 @@
                 if(resultado.status === "éxito") {
                     const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nDirección: ${datosParaGuardar.direccion}\nTeléfono: ${datosParaGuardar.telefono}\nCorreo: ${datosParaGuardar.correo}\nAfiliado: ${datosParaGuardar.afiliado}\nSerial: ${datosParaGuardar.serial}\nBanco: ${datosParaGuardar.banco}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
                     resultadoCrm.style.display = 'block';
-                    resultadoCrm.innerText = textoCrm + "\n\n(Copia este texto para tu sistema)";
+                    resultadoCrm.innerText = textoCrm + "\n\n(Puedes copiar este texto para pegarlo en tu sistema)";
                     
                     form.reset();
                     archivosMemoria.forEach(a => URL.revokeObjectURL(a.url));
