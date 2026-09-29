@@ -55,7 +55,6 @@
 <body>
 
     <div class="visor" id="zona-arrastre">
-        <!-- BARRA PERMANENTE PARA SUBIR ARCHIVOS SECUENCIALES -->
         <div class="toolbar">
             <button class="btn-agregar" onclick="document.getElementById('file-input').click()">➕ Agregar Archivo</button>
             <span class="toolbar-info">También puedes arrastrar o pegar (Ctrl+V) en esta área.</span>
@@ -79,7 +78,7 @@
         
         <form id="param-form">
             <!-- GRUPO 1: EXCLUSIVO DEL RIF -->
-            <div class="form-section-title">Datos del RIF Oficial</div>
+            <div class="form-section-title">Datos del RIF</div>
             <div class="form-group">
                 <label>Nombre del Comercio</label>
                 <input type="text" id="comercio" placeholder="Se extraerá del RIF..." required>
@@ -88,6 +87,13 @@
                 <div class="form-group">
                     <label>RIF</label>
                     <input type="text" id="rif" placeholder="Ej: J-12345678-9" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Contribuyente</label>
+                    <select id="contribuyente" required>
+                        <option value="ORDINARIO">Ordinario</option>
+                        <option value="ESPECIAL">Especial</option>
+                    </select>
                 </div>
             </div>
             <div class="form-group">
@@ -177,7 +183,6 @@
         
         let archivosMemoria = [];
 
-        // --- Eventos Globales de Carga ---
         fileInput.addEventListener('change', (e) => {
             Array.from(e.target.files).forEach(agregarArchivo);
             fileInput.value = ''; 
@@ -204,7 +209,6 @@
             }
         });
 
-        // --- Gestión de Galería y Clasificación Estratégica ---
         function agregarArchivo(file) {
             const urlTemporal = URL.createObjectURL(file);
             const id = Date.now() + Math.random();
@@ -218,7 +222,6 @@
             wrapper.className = 'galeria-item';
             wrapper.dataset.id = id;
             
-            // Miniatura
             const thumb = document.createElement(file.type.startsWith('image/') ? 'img' : 'div');
             thumb.className = 'thumb';
             if (file.type.startsWith('image/')) {
@@ -229,18 +232,16 @@
             }
             thumb.onclick = () => mostrarArchivo(id);
 
-            // Selector para decidir qué extrae el OCR
             const selectClase = document.createElement('select');
             selectClase.className = 'doc-tipo pendiente';
             selectClase.innerHTML = `
                 <option value="">¿Tipo?</option>
-                <option value="RIF">RIF Oficial</option>
+                <option value="RIF">RIF</option>
                 <option value="CORREO">Correo / Planilla</option>
                 <option value="BANCO">Banco (Solo visual)</option>
                 <option value="OTRO">Otro (Solo visual)</option>
             `;
             
-            // El OCR SOLO SE DISPARA CUANDO EL USUARIO CLASIFICA EL ARCHIVO
             selectClase.onchange = function() {
                 if (this.value !== "") {
                     this.classList.remove('pendiente');
@@ -327,8 +328,13 @@
             fileReader.readAsArrayBuffer(file);
         }
 
-        // --- Motor OCR Dirigido (Solo actualiza lo que corresponde) ---
         async function ejecutarOCR(imagenOSource, tipoDoc) {
+            // Protección contra sobreescritura del RIF
+            if (tipoDoc === 'RIF' && document.getElementById('rif').value !== "") {
+                alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información para evitar errores. Si subiste el documento equivocado previamente, borra el campo RIF de forma manual antes de reclasificar.");
+                return;
+            }
+
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "Extrayendo Datos... 🔍";
             btnProcesar.disabled = true;
@@ -339,7 +345,6 @@
                 const textoUpper = textoPlano.toUpperCase();
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
-                // LÓGICA EXCLUSIVA PARA CORREO/PLANILLA
                 if (tipoDoc === 'CORREO') {
                     const matchCorreo = textoPlano.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
                     if (matchCorreo) document.getElementById('correo').value = matchCorreo[0];
@@ -361,8 +366,17 @@
                     if (matchAfiliadoGeneral) document.getElementById('afiliado').value = matchAfiliadoGeneral[1].toUpperCase();
                 }
 
-                // LÓGICA EXCLUSIVA PARA RIF OFICIAL
                 if (tipoDoc === 'RIF') {
+                    // Extracción de Contribuyente (Ordinario/Especial)
+                    const matchCondicion = textoUpper.match(/CONDICI[OÓ]N[\s\S]{0,50}?(ORDINARIO|ESPECIAL)/);
+                    if (matchCondicion) {
+                        document.getElementById('contribuyente').value = matchCondicion[1];
+                    } else if (textoUpper.includes('CONTRIBUYENTE ESPECIAL')) {
+                        document.getElementById('contribuyente').value = 'ESPECIAL';
+                    } else if (textoUpper.includes('CONTRIBUYENTE ORDINARIO') || textoUpper.includes('ORDINARIO')) {
+                        document.getElementById('contribuyente').value = 'ORDINARIO';
+                    }
+
                     const regexRifExact = /[JGVE]-?\d{8,9}/i;
                     let estadoLectura = "BUSCANDO_RIF";
                     let direccionFiscal = "";
@@ -391,7 +405,7 @@
                         }
 
                         if (estadoLectura === "BUSCANDO_NOMBRE") {
-                            if (!lineaUpper.includes('DOMICILIO') && !lineaUpper.includes('DIRECCIÓN')) {
+                            if (!lineaUpper.includes('DOMICILIO') && !lineaUpper.includes('DIRECCIÓN') && !lineaUpper.includes('CONDICIÓN')) {
                                 if (linea.length > 3) {
                                     document.getElementById('comercio').value = linea;
                                     estadoLectura = "BUSCANDO_DOMICILIO";
@@ -458,6 +472,7 @@
                 comercio: document.getElementById('comercio').value,
                 direccion: document.getElementById('direccion').value,
                 rif: document.getElementById('rif').value,
+                contribuyente: document.getElementById('contribuyente').value,
                 afiliado: document.getElementById('afiliado').value,
                 telefono: document.getElementById('telefono').value,
                 correo: document.getElementById('correo').value,
@@ -478,7 +493,7 @@
                 const resultado = await response.json();
                 
                 if(resultado.status === "éxito") {
-                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nDirección: ${datosParaGuardar.direccion}\nTeléfono: ${datosParaGuardar.telefono}\nCorreo: ${datosParaGuardar.correo}\nAfiliado: ${datosParaGuardar.afiliado}\nSerial: ${datosParaGuardar.serial}\nBanco: ${datosParaGuardar.banco}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
+                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nContribuyente: ${datosParaGuardar.contribuyente}\nDirección: ${datosParaGuardar.direccion}\nTeléfono: ${datosParaGuardar.telefono}\nCorreo: ${datosParaGuardar.correo}\nAfiliado: ${datosParaGuardar.afiliado}\nSerial: ${datosParaGuardar.serial}\nBanco: ${datosParaGuardar.banco}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
                     resultadoCrm.style.display = 'block';
                     resultadoCrm.innerText = textoCrm + "\n\n(Puedes copiar este texto para pegarlo en tu sistema)";
                     
