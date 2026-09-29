@@ -61,12 +61,12 @@
         <form id="param-form">
             <div class="form-group">
                 <label>Nombre del Comercio</label>
-                <input type="text" id="comercio" placeholder="Ej: Inversiones C.A." required>
+                <input type="text" id="comercio" placeholder="Se extraerá del RIF..." required>
             </div>
             
             <div class="form-group">
                 <label>Dirección Fiscal</label>
-                <textarea id="direccion" rows="2" placeholder="Extraída del RIF..."></textarea>
+                <textarea id="direccion" rows="2" placeholder="Se extraerá del RIF..."></textarea>
             </div>
 
             <div class="form-row">
@@ -76,7 +76,7 @@
                 </div>
                 <div class="form-group">
                     <label>Nº Afiliado</label>
-                    <input type="text" id="afiliado" placeholder="Ej: 73497418" required>
+                    <input type="text" id="afiliado" placeholder="Ej: 73497418 o PENDIENTE" required>
                 </div>
             </div>
 
@@ -113,6 +113,7 @@
                     <select id="modelo" required>
                         <option value="">Seleccione...</option>
                         <option value="N910">N910</option>
+                        <option value="N950S">N950S</option>
                         <option value="SP600">SP600</option>
                         <option value="ME51">ME51</option>
                     </select>
@@ -295,7 +296,7 @@
                 const textoUpper = textoPlano.toUpperCase();
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
-                // 1. Extracción de Teléfono, Correo, Serial y Operadora
+                // 1. Extracción General (Teléfono, Correo, Serial, Operadora, Modelo, Afiliado Suelto)
                 const matchCorreo = textoPlano.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
                 if (matchCorreo && !document.getElementById('correo').value) {
                     document.getElementById('correo').value = matchCorreo[0];
@@ -306,7 +307,7 @@
                     document.getElementById('telefono').value = matchTelefono[0].replace(/\s/g, '');
                 }
 
-                const matchSerial = textoPlano.match(/serial[\s:=]*([A-Z0-9]{8,15})/i);
+                const matchSerial = textoPlano.match(/serial[\s\w:]*([A-Z0-9]{8,15})/i);
                 if (matchSerial && !document.getElementById('serial').value) {
                     document.getElementById('serial').value = matchSerial[1].toUpperCase();
                 }
@@ -315,7 +316,19 @@
                 else if (textoUpper.includes('MOVISTAR')) document.getElementById('operadora').value = 'MOVISTAR';
                 else if (textoUpper.includes('MOVILNET')) document.getElementById('operadora').value = 'MOVILNET';
 
-                // 2. Máquina de Estados (RIF, Nombre, Dirección, Afiliado)
+                const matchModelo = textoUpper.match(/(N910|SP600|ME51|N950S)/);
+                if (matchModelo) {
+                    document.getElementById('modelo').value = matchModelo[1];
+                }
+
+                // Búsqueda general de Afiliado (Tolera "PENDIENTE" y números de 8 a 10 dígitos)
+                const matchAfiliadoGeneral = textoPlano.match(/(?:c[oó]digo\s+de\s+afiliaci[oó]n|afiliaci[oó]n|afiliado)[\s:=]*(\d{8,10}|PENDIENTE)/i);
+                if (matchAfiliadoGeneral && !document.getElementById('afiliado').value) {
+                    document.getElementById('afiliado').value = matchAfiliadoGeneral[1].toUpperCase();
+                }
+
+                // 2. Máquina de Estados Exclusiva (RIF, Nombre Comercial, Dirección)
+                // Se ignora deliberadamente el formato RIF del correo electrónico debido a los puntos en su estructura
                 const regexRifExact = /[JGVE]-?\d{8,9}/i;
                 let estadoLectura = "BUSCANDO_RIF";
                 let direccionFiscal = "";
@@ -326,7 +339,7 @@
 
                     const lineaUpper = linea.toUpperCase();
 
-                    // RIF
+                    // RIF Oficial
                     if (estadoLectura === "BUSCANDO_RIF") {
                         const matchRif = linea.match(regexRifExact);
                         if (matchRif) {
@@ -346,7 +359,7 @@
                         }
                     }
 
-                    // NOMBRE
+                    // NOMBRE Oficial
                     if (estadoLectura === "BUSCANDO_NOMBRE") {
                         if (!lineaUpper.includes('DOMICILIO') && !lineaUpper.includes('DIRECCIÓN')) {
                             if (linea.length > 3) {
@@ -359,7 +372,7 @@
                         }
                     }
                     
-                    // DIRECCIÓN INICIO
+                    // DIRECCIÓN Oficial
                     if (estadoLectura === "BUSCANDO_DOMICILIO" || lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL')) {
                         if (lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
                             estadoLectura = "CAPTURANDO_DIRECCION";
@@ -369,7 +382,7 @@
                                 let matchZona = fragmento.match(/(ZONA POSTAL\s*\d+)/i);
                                 if (matchZona) { 
                                     direccionFiscal += fragmento.substring(0, matchZona.index + matchZona[0].length) + " ";
-                                    estadoLectura = "BUSCANDO_AFILIADO"; 
+                                    estadoLectura = "FIN_DIRECCION"; 
                                 } else {
                                     direccionFiscal += fragmento + " "; 
                                 }
@@ -378,27 +391,19 @@
                         }
                     }
 
-                    // DIRECCIÓN CONTINUACIÓN
                     if (estadoLectura === "CAPTURANDO_DIRECCION") {
                         if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES')) {
-                            estadoLectura = "BUSCANDO_AFILIADO";
+                            estadoLectura = "FIN_DIRECCION";
                         } else {
                             let matchZona = linea.match(/(ZONA POSTAL\s*\d+)/i);
                             if (matchZona) { 
                                 direccionFiscal += linea.substring(0, matchZona.index + matchZona[0].length) + " ";
-                                estadoLectura = "BUSCANDO_AFILIADO"; 
+                                estadoLectura = "FIN_DIRECCION"; 
                             } else {
                                 direccionFiscal += linea + " ";
                             }
                         }
                         continue;
-                    }
-
-                    // AFILIADO
-                    const regexAfiliado = /(?:c[oó]digo\s+de\s+afiliaci[oó]n|afiliaci[oó]n|afiliado)[\s:=]*(\d{8})/i;
-                    const matchAfiliado = linea.match(regexAfiliado);
-                    if (matchAfiliado && !document.getElementById('afiliado').value) {
-                        document.getElementById('afiliado').value = matchAfiliado[1];
                     }
                 }
 
