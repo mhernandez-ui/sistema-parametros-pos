@@ -22,8 +22,18 @@
         #drop-zone-overlay { flex: 1; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 1.1rem; text-align: center; padding: 20px;}
         #drop-zone-overlay.dragover { background: #dee2e6; border: 3px dashed #495057; }
         
-        #preview-container { flex: 1; display: none; padding: 10px; flex-direction: column; height: 0;}
-        #preview { width: 100%; height: 100%; border: none; flex: 1; background: #fff; border-radius: 5px;}
+        #preview-container { flex: 1; display: none; padding: 10px; flex-direction: column; height: 0; position: relative;}
+        
+        /* Controles de Zoom */
+        .zoom-controls { display: none; justify-content: center; gap: 10px; margin-bottom: 10px; background: #dee2e6; padding: 5px; border-radius: 5px; }
+        .btn-zoom { background: #6c757d; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 1.1rem; }
+        .btn-zoom:hover { background: #5a6268; }
+        
+        /* Contenedor de visualización (Imagen o PDF) */
+        .preview-wrapper { flex: 1; overflow: auto; background: #fff; border-radius: 5px; display: flex; justify-content: center; align-items: flex-start; }
+        #preview-img { max-width: 100%; transform-origin: top center; transition: transform 0.2s ease-out; display: none;}
+        #preview-pdf { width: 100%; height: 100%; border: none; display: none;}
+
         #ocr-loading { display: none; position: absolute; top: 60px; right: 10px; background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
         
         .galeria { height: 95px; display: flex; gap: 15px; padding: 15px 5px 5px 5px; overflow-x: auto; border-top: 1px solid #ccc; margin-top: 10px;}
@@ -54,7 +64,7 @@
     <div class="visor" id="zona-arrastre">
         <div class="toolbar">
             <button class="btn-agregar" onclick="document.getElementById('file-input').click()">➕ Agregar Archivo</button>
-            <span class="toolbar-info">También puedes arrastrar o pegar (Ctrl+V) en esta área.</span>
+            <span class="toolbar-info">Arrastra o pega (Ctrl+V) documentos aquí.</span>
         </div>
         
         <input type="file" id="file-input" multiple accept="image/*,application/pdf" style="display: none;">
@@ -65,7 +75,15 @@
         </div>
         
         <div id="preview-container">
-            <iframe id="preview"></iframe>
+            <div class="zoom-controls" id="zoom-controls">
+                <button class="btn-zoom" onclick="cambiarZoom(0.2)">+</button>
+                <button class="btn-zoom" onclick="cambiarZoom(-0.2)">-</button>
+                <button class="btn-zoom" onclick="resetZoom()" style="font-size: 0.9rem;">Restablecer</button>
+            </div>
+            <div class="preview-wrapper">
+                <img id="preview-img" alt="Vista previa">
+                <iframe id="preview-pdf"></iframe>
+            </div>
             <div class="galeria" id="galeria"></div>
         </div>
     </div>
@@ -76,8 +94,10 @@
         <form id="param-form">
             <div class="form-section-title">Datos del RIF</div>
             <div class="form-group">
-                <label>Nombre del Comercio</label>
-                <input type="text" id="comercio" placeholder="Se extraerá del RIF..." required>
+                <label>Nombre del Comercio / Firma Personal</label>
+                <!-- Campo con lista desplegable para firmas personales -->
+                <input type="text" id="comercio" list="lista-firmas" placeholder="Se extraerá del RIF..." required>
+                <datalist id="lista-firmas"></datalist>
             </div>
             <div class="form-row">
                 <div class="form-group">
@@ -169,7 +189,9 @@
         const overlay = document.getElementById('drop-zone-overlay');
         const fileInput = document.getElementById('file-input');
         const previewContainer = document.getElementById('preview-container');
-        const preview = document.getElementById('preview');
+        const previewImg = document.getElementById('preview-img');
+        const previewPdf = document.getElementById('preview-pdf');
+        const zoomControls = document.getElementById('zoom-controls');
         const galeria = document.getElementById('galeria');
         const form = document.getElementById('param-form');
         const resultadoCrm = document.getElementById('resultado-crm');
@@ -177,7 +199,20 @@
         const ocrLoading = document.getElementById('ocr-loading');
         
         let archivosMemoria = [];
+        let zoomActual = 1;
 
+        // --- Controles de Zoom ---
+        function cambiarZoom(incremento) {
+            zoomActual += incremento;
+            if (zoomActual < 0.4) zoomActual = 0.4; // Límite de reducción
+            previewImg.style.transform = `scale(${zoomActual})`;
+        }
+        function resetZoom() {
+            zoomActual = 1;
+            previewImg.style.transform = `scale(1)`;
+        }
+
+        // --- Gestión de Archivos ---
         fileInput.addEventListener('change', (e) => {
             Array.from(e.target.files).forEach(agregarArchivo);
             fileInput.value = ''; 
@@ -275,7 +310,20 @@
             if(activeThumb) activeThumb.classList.add('active');
             
             const archivo = archivosMemoria.find(a => a.id === id);
-            if (archivo) preview.src = archivo.url;
+            if (archivo) {
+                resetZoom();
+                if (archivo.file.type.startsWith('image/')) {
+                    previewImg.src = archivo.url;
+                    previewImg.style.display = 'block';
+                    previewPdf.style.display = 'none';
+                    zoomControls.style.display = 'flex';
+                } else {
+                    previewPdf.src = archivo.url;
+                    previewPdf.style.display = 'block';
+                    previewImg.style.display = 'none';
+                    zoomControls.style.display = 'none';
+                }
+            }
         }
 
         function eliminarArchivo(id) {
@@ -291,7 +339,8 @@
             if (archivosMemoria.length === 0) {
                 previewContainer.style.display = 'none';
                 overlay.style.display = 'flex';
-                preview.src = '';
+                previewImg.src = '';
+                previewPdf.src = '';
             } else {
                 mostrarArchivo(archivosMemoria[archivosMemoria.length - 1].id);
             }
@@ -325,7 +374,7 @@
 
         async function ejecutarOCR(imagenOSource, tipoDoc) {
             if (tipoDoc === 'RIF' && document.getElementById('rif').value !== "") {
-                alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información para evitar errores. Si subiste el documento equivocado previamente, borra el campo RIF de forma manual antes de reclasificar.");
+                alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información. Si deseas procesar un RIF nuevo, borra la casilla del RIF manualmente.");
                 return;
             }
 
@@ -361,7 +410,11 @@
                 }
 
                 if (tipoDoc === 'RIF') {
-                    // --- Extracción de Condición de Contribuyente Corregida ---
+                    // Limpiar lista de firmas anteriores
+                    const listaFirmas = document.getElementById('lista-firmas');
+                    listaFirmas.innerHTML = '';
+                    let arrayFirmas = [];
+
                     const matchCondicion = textoPlano.match(/Condici[oó]n:([^\n]+)/i);
                     if (matchCondicion) {
                         const lineaCondicion = matchCondicion[1].toUpperCase();
@@ -371,7 +424,6 @@
                             document.getElementById('contribuyente').value = 'ORDINARIO';
                         }
                     } else {
-                        // Respaldo global seguro si no detecta la palabra "Condición:"
                         if (textoUpper.includes('CONTRIBUYENTE ESPECIAL') || textoUpper.includes('Y AGENTE DE RETENCI')) {
                             document.getElementById('contribuyente').value = 'ESPECIAL';
                         } else if (textoUpper.includes('CONTRIBUYENTE ORDINARIO')) {
@@ -398,6 +450,7 @@
                                 let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
                                 if (restoDeLinea.length > 3) {
                                     document.getElementById('comercio').value = restoDeLinea;
+                                    arrayFirmas.push(restoDeLinea);
                                     estadoLectura = "BUSCANDO_DOMICILIO";
                                 } else {
                                     estadoLectura = "BUSCANDO_NOMBRE";
@@ -410,6 +463,7 @@
                             if (!lineaUpper.includes('DOMICILIO') && !lineaUpper.includes('DIRECCIÓN') && !lineaUpper.includes('CONDICIÓN')) {
                                 if (linea.length > 3) {
                                     document.getElementById('comercio').value = linea;
+                                    arrayFirmas.push(linea);
                                     estadoLectura = "BUSCANDO_DOMICILIO";
                                     continue;
                                 }
@@ -448,12 +502,32 @@
                                     direccionFiscal += linea + " ";
                                 }
                             }
+                        }
+
+                        // --- Captura Dinámica de Firmas Personales ---
+                        if (lineaUpper.includes('FIRMAS PERSONALES') && !lineaUpper.includes('NO POSEE')) {
+                            estadoLectura = "CAPTURANDO_FIRMAS";
                             continue;
+                        }
+
+                        if (estadoLectura === "CAPTURANDO_FIRMAS") {
+                            if (linea.length > 3 && !lineaUpper.includes('SISTEMAS EN LÍNEA') && !lineaUpper.includes('SELLO HÚMEDO')) {
+                                arrayFirmas.push(linea);
+                            } else if (lineaUpper.includes('SISTEMAS EN LÍNEA') || lineaUpper.includes('SELLO HÚMEDO')) {
+                                estadoLectura = "FIN"; // Abortar captura al final del documento
+                            }
                         }
                     }
 
                     if (direccionFiscal) {
                         document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
+                    }
+
+                    // Llenar la lista desplegable de firmas para que el usuario elija
+                    if (arrayFirmas.length > 0) {
+                        arrayFirmas.forEach(firma => {
+                            listaFirmas.innerHTML += `<option value="${firma}">`;
+                        });
                     }
                 }
 
