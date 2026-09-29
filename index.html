@@ -503,22 +503,25 @@
                             }
                         }
 
-                        // --- Captura Dinámica de Firmas Personales ---
-                        // Si encuentra la etiqueta, entra al estado de captura y desecha la etiqueta y su número
+                    // --- Captura Dinámica de Firmas Personales ---
                         if (lineaUpper.includes('FIRMAS PERSONALES') && !lineaUpper.includes('NO POSEE')) {
                             estadoLectura = "CAPTURANDO_FIRMAS";
+                            
+                            // Rescate inteligente: Si el OCR lee el nombre pegado en la misma línea que la etiqueta
+                            let textoExtra = linea.replace(/FIRMAS PERSONALES[\s:]*\d*/ig, '').trim();
+                            if (textoExtra.length > 3 && !textoExtra.toUpperCase().match(/(SISTEMAS EN L|SELLO H|CONDICI|MINISTERIO)/)) {
+                                arrayFirmas.push(textoExtra);
+                            }
                             continue;
                         }
 
-                        // Captura las líneas que vienen justo debajo de "Firmas Personales"
                         if (estadoLectura === "CAPTURANDO_FIRMAS") {
-                            // Freno de emergencia (pie de página del SENIAT)
-                            if (lineaUpper.includes('SISTEMAS EN LÍNEA') || lineaUpper.includes('SELLO HÚMEDO') || lineaUpper.includes('LA CONDICIÓN DE ESTE') || lineaUpper.includes('MINISTERIO')) {
+                            // Freno de emergencia mejorado (tolera fallos de acentos en el OCR)
+                            if (lineaUpper.match(/(SISTEMAS EN L|SELLO H[UÚ]MEDO|CONDICI[OÓ]N|MINISTERIO|GERENCIA|TRIBUTOS)/)) {
                                 estadoLectura = "FIN"; 
                                 continue;
                             }
                             
-                            // Guardamos la firma si tiene contenido real y evitamos que repita la etiqueta
                             if (linea.length > 3 && !lineaUpper.includes('FIRMAS PERSONALES')) {
                                 arrayFirmas.push(linea);
                             }
