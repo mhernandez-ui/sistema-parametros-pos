@@ -74,7 +74,6 @@
         <h2 style="margin-top: 0; font-size: 1.4rem; margin-bottom: 5px;">Instalaciones - Credicard</h2>
         
         <form id="param-form">
-            <!-- GRUPO 1: EXCLUSIVO DEL RIF -->
             <div class="form-section-title">Datos del RIF</div>
             <div class="form-group">
                 <label>Nombre del Comercio</label>
@@ -98,7 +97,6 @@
                 <textarea id="direccion" rows="2" placeholder="Se extraerá del RIF..."></textarea>
             </div>
 
-            <!-- GRUPO 2: EXCLUSIVO DEL CORREO/PLANILLA -->
             <div class="form-section-title">Datos de la Solicitud (Correo / Planilla)</div>
             <div class="form-row">
                 <div class="form-group">
@@ -363,18 +361,22 @@
                 }
 
                 if (tipoDoc === 'RIF') {
-                    // Extracción de Contribuyente (Ordinario, Especial o Agente de Retención)
-                    const matchCondicion = textoUpper.match(/CONDICI[OÓ]N[\s\S]{0,50}?(ORDINARIO|ESPECIAL|AGENTE DE RETENCI[OÓ]N)/);
+                    // --- Extracción de Condición de Contribuyente Corregida ---
+                    const matchCondicion = textoPlano.match(/Condici[oó]n:([^\n]+)/i);
                     if (matchCondicion) {
-                        if (matchCondicion[1].includes('AGENTE DE RETENCI')) {
+                        const lineaCondicion = matchCondicion[1].toUpperCase();
+                        if (lineaCondicion.includes('ESPECIAL') || lineaCondicion.includes('AGENTE DE RETENCI')) {
                             document.getElementById('contribuyente').value = 'ESPECIAL';
-                        } else {
-                            document.getElementById('contribuyente').value = matchCondicion[1];
+                        } else if (lineaCondicion.includes('ORDINARIO')) {
+                            document.getElementById('contribuyente').value = 'ORDINARIO';
                         }
-                    } else if (textoUpper.includes('CONTRIBUYENTE ESPECIAL') || textoUpper.includes('AGENTE DE RETENCIÓN') || textoUpper.includes('AGENTE DE RETENCION')) {
-                        document.getElementById('contribuyente').value = 'ESPECIAL';
-                    } else if (textoUpper.includes('CONTRIBUYENTE ORDINARIO') || textoUpper.includes('ORDINARIO')) {
-                        document.getElementById('contribuyente').value = 'ORDINARIO';
+                    } else {
+                        // Respaldo global seguro si no detecta la palabra "Condición:"
+                        if (textoUpper.includes('CONTRIBUYENTE ESPECIAL') || textoUpper.includes('Y AGENTE DE RETENCI')) {
+                            document.getElementById('contribuyente').value = 'ESPECIAL';
+                        } else if (textoUpper.includes('CONTRIBUYENTE ORDINARIO')) {
+                            document.getElementById('contribuyente').value = 'ORDINARIO';
+                        }
                     }
 
                     const regexRifExact = /[JGVE]-?\d{8,9}/i;
@@ -435,7 +437,7 @@
                         }
 
                         if (estadoLectura === "CAPTURANDO_DIRECCION") {
-                            if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES')) {
+                            if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES') || lineaUpper.includes('CONDICIÓN')) {
                                 estadoLectura = "FIN_DIRECCION";
                             } else {
                                 let matchZona = linea.match(/(ZONA POSTAL\s*\d+)/i);
