@@ -500,19 +500,20 @@
                             }
                         }
 
-                        // --- Contador Estricto de Firmas Personales ---
+                        // --- Contador Estricto de Firmas Personales (Tolerante a puntos y comas) ---
                         if (lineaUpper.includes('FIRMAS PERSONALES') && !lineaUpper.includes('NO POSEE')) {
                             estadoLectura = "CAPTURANDO_FIRMAS";
                             
-                            // Extraer la cantidad permitida
-                            const matchCantidad = lineaUpper.match(/FIRMAS PERSONALES[\s:]*(\d+)/);
+                            // Extraer la cantidad permitida ignorando signos de puntuación como puntos o comas
+                            const matchCantidad = lineaUpper.match(/FIRMAS PERSONALES\D*(\d+)/);
                             if (matchCantidad) {
                                 firmasEsperadas = parseInt(matchCantidad[1], 10);
                             } else {
-                                firmasEsperadas = 1; // Respaldo a 1 si el OCR falla leyendo el número
+                                firmasEsperadas = 1; 
                             }
                             
-                            let textoExtra = linea.replace(/FIRMAS PERSONALES[\s:]*\d*/ig, '').trim();
+                            // Rescate si el texto de la firma está mezclado en la misma línea
+                            let textoExtra = linea.replace(/FIRMAS PERSONALES\D*\d*/ig, '').replace(/^[^a-zA-Z0-9]+/, '').trim();
                             if (textoExtra.length > 3 && !textoExtra.toUpperCase().match(/(SISTEMAS EN L|SELLO H|CONDICI|MINISTERIO|GERENCIA)/)) {
                                 arrayFirmas.push(textoExtra);
                                 firmasCapturadas++;
@@ -522,7 +523,6 @@
                         }
 
                         if (estadoLectura === "CAPTURANDO_FIRMAS") {
-                            // Freno de seguridad
                             if (lineaUpper.match(/(SISTEMAS EN L|SELLO H[UÚ]MEDO|CONDICI[OÓ]N|MINISTERIO|GERENCIA|TRIBUTOS)/)) {
                                 estadoLectura = "FIN"; 
                                 continue;
