@@ -122,7 +122,7 @@
                 </div>
                 <div class="form-group">
                     <label>Serial Asignado</label>
-                    <input type="text" id="serial" placeholder="Ej: J79A00791552 o 62179269">
+                    <input type="text" id="serial" placeholder="Ej: NFD300348979 o 62179269">
                 </div>
             </div>
             <div class="form-row">
@@ -221,7 +221,7 @@
             previewImg.style.transform = `scale(1)`;
         }
 
-        // --- FILTRO DE OPTIMIZACIÓN DE IMAGEN PARA PLANILLAS MANUSCRITAS ---
+        // --- FILTRO DE OPTIMIZACIÓN DE IMAGEN ---
         function optimizarImagenParaOCR(imgUrl) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -230,11 +230,8 @@
                     const ctx = canvas.getContext('2d');
                     canvas.width = img.width;
                     canvas.height = img.height;
-                    
-                    // Aplicar alto contraste y escala de grises para resaltar tinta
                     ctx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
                     ctx.drawImage(img, 0, 0);
-                    
                     resolve(canvas.toDataURL('image/jpeg', 1.0));
                 };
                 img.src = imgUrl;
@@ -305,7 +302,6 @@
                     this.classList.remove('pendiente');
                     if (this.value === 'RIF' || this.value === 'CORREO') {
                         if (file.type.startsWith('image/')) {
-                            // Aplicar optimización de imagen antes del OCR para mejorar planillas a mano
                             const imgOptimizada = await optimizarImagenParaOCR(urlTemporal);
                             ejecutarOCR(imgOptimizada, this.value);
                         } else if (file.type === 'application/pdf') {
@@ -394,7 +390,6 @@
                     canvas.width = viewport.width;
                     
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    // También optimizamos el renderizado del PDF
                     const imgOptimizada = await optimizarImagenParaOCR(canvas.toDataURL('image/png'));
                     ejecutarOCR(imgOptimizada, tipoDoc);
                 } catch (error) {
@@ -404,9 +399,10 @@
             fileReader.readAsArrayBuffer(file);
         }
 
+        // --- MOTOR OCR CENTRALIZADO ---
         async function ejecutarOCR(imagenOSource, tipoDoc) {
             if (tipoDoc === 'RIF' && document.getElementById('rif').value !== "") {
-                alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información. Si deseas procesar un RIF nuevo, borra la casilla del RIF manualmente.");
+                alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información.");
                 return;
             }
 
@@ -420,44 +416,51 @@
                 const textoUpper = textoPlano.toUpperCase();
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
+                // === LÓGICA DE EXTRACCIÓN: CORREOS / PLANILLAS ===
                 if (tipoDoc === 'CORREO') {
-                    // Limpieza y reparación común de correos en OCR
-                    let textoCorregido = textoPlano.replace(/©/g, '@').replace(/([a-zA-Z0-9._%+-]+)\s*@\s*([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '$1@$2');
-                    const matchCorreo = textoCorregido.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                    // Eliminamos todos los espacios para asegurar capturas puras de correos y teléfonos
+                    const textoSinEspacios = textoPlano.replace(/\s+/g, '');
+                    
+                    // CORREO
+                    const matchCorreo = textoSinEspacios.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
                     if (matchCorreo) document.getElementById('correo').value = matchCorreo[0].toLowerCase();
 
-                    // Teléfono
-                    const matchTelefono = textoPlano.match(/(?:04\d{2}|02\d{2})[\s\-]?\d{3}[\s\-]?\d{4}/);
-                    if (matchTelefono) document.getElementById('telefono').value = matchTelefono[0].replace(/\s/g, '');
+                    // TELÉFONO
+                    const matchTelefono = textoSinEspacios.match(/(?:0414|0424|0412|0416|0426|02\d{2})\d{7}/);
+                    if (matchTelefono) document.getElementById('telefono').value = matchTelefono[0];
 
-                    // Serial (Captura explícita de números o alfanuméricos evitando afiliado)
-                    const matchSerial = textoUpper.match(/(?:SERIAL|S\/N|SN)[\s\w:=]*([A-Z0-9]{8,15})/);
+                    // SERIAL (Radares de proximidad)
+                    // Busca "SERIAL", salta hasta 35 caracteres basura (espacios de tablas) y agarra de 8 a 15 caracteres
+                    const matchSerial = textoUpper.match(/SERIAL[\s\S]{0,35}?([A-Z0-9]{8,15})/);
                     if (matchSerial) document.getElementById('serial').value = matchSerial[1];
 
-                    // Operadora
+                    // AFILIADO (Formatos Credicard y Platco V0...)
+                    const matchAfiliadoGeneral = textoUpper.match(/(?:AFILIACI[OÓ]N|AFILIADO|C[OÓ]DIGO[\s\.]*AFILIACI[OÓ]N)[\s\S]{0,35}?([JGVE]?0?\d{11,14}|\d{8}|PENDIENTE)/);
+                    if (matchAfiliadoGeneral) document.getElementById('afiliado').value = matchAfiliadoGeneral[1];
+
+                    // OPERADORA
                     if (textoUpper.includes('DIGITEL')) document.getElementById('operadora').value = 'DIGITEL';
                     else if (textoUpper.includes('MOVISTAR')) document.getElementById('operadora').value = 'MOVISTAR';
                     else if (textoUpper.includes('MOVILNET')) document.getElementById('operadora').value = 'MOVILNET';
 
-                    // Modelo (Lista actualizada)
+                    // MODELOS
                     const matchModelo = textoUpper.match(/(N950K|N750|N950S|N910|SP600|6210|7210|ME51|ME60)/);
                     if (matchModelo) document.getElementById('modelo').value = matchModelo[1];
 
-                    // Afiliado (Credicard 8 dígitos O Platco formato V0...)
-                    const matchAfiliadoGeneral = textoUpper.match(/(?:AFILIACI[OÓ]N|AFILIADO|C[OÓ]DIGO)[\s:=]*([JGVE]0\d{11,13}|\d{8}|PENDIENTE)/);
-                    if (matchAfiliadoGeneral) document.getElementById('afiliado').value = matchAfiliadoGeneral[1];
-
-                    // Actividad Comercial / Económica
-                    const matchActividad = textoUpper.match(/(?:ACTIVIDAD\s+ECON[OÓ]MICA|ACTIVIDAD\s+COMERCIAL|RAMO)[\s:=]+([^\n]+)/);
-                    if (matchActividad) document.getElementById('actividad').value = matchActividad[1].trim();
+                    // ACTIVIDAD COMERCIAL
+                    const matchActividad = textoUpper.match(/(?:ACTIVIDAD\s+ECON[OÓ]MICA|ACTIVIDAD\s+COMERCIAL|RAMO)[\s\S]{0,35}?([A-ZÑ\s]{5,40})/);
+                    if (matchActividad) {
+                        // Limpiar espacios en blanco excesivos por saltos de línea de la tabla
+                        document.getElementById('actividad').value = matchActividad[1].replace(/\s+/g, ' ').trim();
+                    }
                 }
 
+                // === LÓGICA DE EXTRACCIÓN: RIF ===
                 if (tipoDoc === 'RIF') {
                     const listaFirmas = document.getElementById('lista-firmas');
                     const inputComercio = document.getElementById('comercio');
                     listaFirmas.innerHTML = '';
                     let arrayFirmas = [];
-                    
                     let firmasEsperadas = 0;
                     let firmasCapturadas = 0;
 
@@ -550,7 +553,6 @@
 
                         if (lineaUpper.includes('FIRMAS PERSONALES') && !lineaUpper.includes('NO POSEE')) {
                             estadoLectura = "CAPTURANDO_FIRMAS";
-                            
                             const matchCantidad = lineaUpper.match(/FIRMAS PERSONALES\D*(\d+)/);
                             if (matchCantidad) {
                                 firmasEsperadas = parseInt(matchCantidad[1], 10);
@@ -572,7 +574,6 @@
                                 estadoLectura = "FIN"; 
                                 continue;
                             }
-                            
                             if (linea.length > 3 && !lineaUpper.includes('FIRMAS PERSONALES')) {
                                 arrayFirmas.push(linea);
                                 firmasCapturadas++;
