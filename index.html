@@ -26,7 +26,6 @@
         .btn-zoom { background: #6c757d; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 1.1rem; }
         .btn-zoom:hover { background: #5a6268; }
         
-        /* Contenedor del Lienzo Interactivo */
         .preview-wrapper { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 20px;}
         #canvas-container { position: relative; transform-origin: top center; transition: transform 0.2s ease-out; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: #fff; display: none;}
         #preview-canvas { max-width: 100%; display: block; cursor: crosshair; }
@@ -44,20 +43,28 @@
         .btn-eliminar { position: absolute; top: -8px; right: 2px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s; z-index: 5;}
         .btn-eliminar:hover { background: #bb2d3b; transform: scale(1.1);}
 
-        /* Indicador de Herramienta de Recorte */
         #indicador-recorte { background: #cfe2ff; color: #084298; border: 1px solid #b6d4fe; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.85rem; font-weight: bold; text-align: center; display: none; transition: 0.3s;}
 
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         .form-section-title { font-size: 0.95rem; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; margin-top: 10px; font-weight: bold;}
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.8rem; color: #333; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 0.95rem; font-family: inherit; transition: border-color 0.3s;}
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #0d6efd; outline: none; box-shadow: 0 0 5px rgba(13,110,253,0.3);}
+        
+        /* Efecto Visual de Selección de Casillas */
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 0.95rem; font-family: inherit; transition: all 0.3s;}
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #0d6efd; background-color: #e8f0fe; outline: none; box-shadow: 0 0 8px rgba(13,110,253,0.4);}
+        
         .form-row { display: flex; gap: 15px; }
         .form-row .form-group { flex: 1; }
-        button.btn-principal { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 15px; font-weight: bold; }
-        button.btn-principal:hover { background-color: #0b5ed7; }
-        button.btn-principal:disabled { background-color: #6c757d; cursor: not-allowed; }
+        
+        /* Botones del Formulario */
+        .botones-accion { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-principal { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 2; font-weight: bold; transition: 0.2s;}
+        .btn-principal:hover { background-color: #0b5ed7; }
+        .btn-principal:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .btn-secundario { background-color: #6c757d; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 1; font-weight: bold; transition: 0.2s;}
+        .btn-secundario:hover { background-color: #5a6268; }
+
         #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.4;}
     </style>
 </head>
@@ -94,9 +101,8 @@
     <div class="formulario">
         <h2 style="margin-top: 0; font-size: 1.4rem; margin-bottom: 5px;">Instalaciones - Credicard / Platco</h2>
         
-        <!-- Indicador de Recorte Mágico -->
         <div id="indicador-recorte">
-            🎯 Recorte Mágico Activo: Selecciona el texto en la imagen para rellenar la casilla <span id="campo-objetivo" style="text-decoration: underline;"></span>
+            🎯 Recorte Mágico Activo: Dibuja un cuadro en el documento para extraer: <span id="campo-objetivo" style="text-decoration: underline; text-transform: uppercase;"></span>
         </div>
 
         <form id="param-form">
@@ -197,7 +203,10 @@
                 </div>
             </div>
 
-            <button type="submit" id="btn-procesar" class="btn-principal">Cargar a Sheets y Generar CRM</button>
+            <div class="botones-accion">
+                <button type="button" id="btn-limpiar" class="btn-secundario">Limpiar Todo</button>
+                <button type="submit" id="btn-procesar" class="btn-principal">Cargar a Sheets y Generar CRM</button>
+            </div>
         </form>
         <div id="resultado-crm"></div>
     </div>
@@ -217,6 +226,7 @@
         const zoomControls = document.getElementById('zoom-controls');
         const galeria = document.getElementById('galeria');
         const form = document.getElementById('param-form');
+        const btnLimpiar = document.getElementById('btn-limpiar');
         const resultadoCrm = document.getElementById('resultado-crm');
         const btnProcesar = document.getElementById('btn-procesar');
         const ocrLoading = document.getElementById('ocr-loading');
@@ -239,6 +249,24 @@
             });
         });
 
+        // --- BOTÓN LIMPIAR TODO ---
+        btnLimpiar.addEventListener('click', () => {
+            if(confirm("¿Estás seguro de que deseas limpiar toda la información y eliminar los documentos?")) {
+                form.reset();
+                document.getElementById('comercio').style.border = "1px solid #ccc";
+                archivosMemoria.forEach(a => URL.revokeObjectURL(a.url));
+                archivosMemoria = [];
+                galeria.innerHTML = '';
+                canvasContainer.style.display = 'none';
+                overlay.style.display = 'flex';
+                zoomControls.style.display = 'none';
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                indicadorRecorte.style.display = 'none';
+                resultadoCrm.style.display = 'none';
+                activeInputId = null;
+            }
+        });
+
         // --- CONTROLES DE ZOOM ---
         function cambiarZoom(incremento) {
             zoomActual += incremento;
@@ -253,7 +281,7 @@
         // --- HERRAMIENTA DE RECORTE MÁGICO (MOUSE EVENTS) ---
         canvas.addEventListener('mousedown', (e) => {
             if (!activeInputId) {
-                alert("Primero haz clic en la casilla del formulario que deseas rellenar.");
+                alert("Primero haz clic en la casilla iluminada en azul del formulario que deseas rellenar.");
                 return;
             }
             isDrawing = true;
@@ -288,7 +316,6 @@
             const endX = e.offsetX;
             const endY = e.offsetY;
 
-            // Transformar píxeles visuales (CSS) a píxeles reales del bitmap del canvas
             const ratioX = canvas.width / canvas.clientWidth;
             const ratioY = canvas.height / canvas.clientHeight;
 
@@ -297,7 +324,7 @@
             const cropW = Math.abs(endX - startX) * ratioX;
             const cropH = Math.abs(endY - startY) * ratioY;
 
-            if (cropW < 10 || cropH < 10) return; // Evitar clics accidentales pequeños
+            if (cropW < 10 || cropH < 10) return; 
 
             extraerTextoDeRecorte(cropX, cropY, cropW, cropH);
         });
@@ -306,7 +333,6 @@
             ocrLoading.style.display = 'block';
             ocrLoading.innerText = "Extrayendo recorte... ✂️";
 
-            // Crear un canvas temporal invisible con el pedazo recortado
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = w;
             tempCanvas.height = h;
@@ -318,17 +344,25 @@
                 const result = await Tesseract.recognize(imgData, 'spa');
                 let textoExtraido = result.data.text.trim();
                 
-                // Limpieza rápida según la casilla elegida
-                if(activeInputId === 'correo') textoExtraido = textoExtraido.replace(/\s/g, '').toLowerCase();
+                // === FILTROS DE CORRECCIÓN PARA EL RECORTE ===
+                if(activeInputId === 'correo') {
+                    textoExtraido = textoExtraido.toLowerCase()
+                        .replace(/\s+/g, '') // Quita todos los espacios
+                        .replace(/(?:\(a\)|[a]|\{a\}|©|®|&|'a'|"a")/g, '@'); // Forzar la aparición del arroba si se leyó mal
+                    
+                    // Si recorta solo el texto, no tiene arroba, pero es un dominio conocido: inyectarlo
+                    if (!textoExtraido.includes('@') && textoExtraido.match(/(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com|cantv\.net)/)) {
+                        textoExtraido = textoExtraido.replace(/(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com|cantv\.net)/, '@$1');
+                        textoExtraido = textoExtraido.replace(/@@/g, '@'); // Limpiar duplicados accidentales
+                    }
+                }
                 if(activeInputId === 'telefono') textoExtraido = textoExtraido.replace(/[^\d\-\s]/g, '');
                 if(activeInputId === 'serial') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
+                if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
 
                 if (textoExtraido) {
                     const inputTarget = document.getElementById(activeInputId);
                     inputTarget.value = textoExtraido;
-                    // Efecto visual de éxito
-                    inputTarget.style.backgroundColor = '#e8f0fe';
-                    setTimeout(() => inputTarget.style.backgroundColor = '', 1000);
                 } else {
                     alert("No se detectó texto en el área seleccionada.");
                 }
@@ -381,7 +415,6 @@
             const urlTemporal = URL.createObjectURL(file);
             const id = Date.now() + Math.random();
             
-            // Renderizamos inmediatamente el archivo para el visor y el Recorte Mágico
             preRenderizarArchivo(file, urlTemporal).then((renderedUrl) => {
                 archivosMemoria.push({ id, file, url: urlTemporal, renderedUrl: renderedUrl });
                 mostrarArchivo(id);
@@ -441,7 +474,6 @@
             galeria.appendChild(wrapper);
         }
 
-        // Convierte PDFs a Imagen y prepara imágenes para el Lienzo principal
         function preRenderizarArchivo(file, urlTemporal) {
             return new Promise((resolve) => {
                 if (file.type.startsWith('image/')) {
@@ -515,7 +547,7 @@
         // --- MOTOR OCR AUTOMÁTICO (ASPIRADORA DE DATOS) ---
         async function ejecutarOCRAuto(imagenOSource, tipoDoc) {
             if (tipoDoc === 'RIF' && document.getElementById('rif').value !== "") {
-                alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información. Utiliza el Recorte Mágico si faltó algún dato.");
+                alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información.");
                 return;
             }
 
@@ -530,11 +562,12 @@
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
                 if (tipoDoc === 'CORREO') {
-                    const textoSinEspacios = textoPlano.replace(/\s+/g, '');
+                    // === FILTRO AGRESIVO DE CORREOS AUTOMÁTICO ===
+                    const textoEmailBase = textoPlano.toLowerCase().replace(/(?:\(a\)|[a]|\{a\}|©|®|&| a )/g, '@');
+                    const textoSinEspacios = textoEmailBase.replace(/\s+/g, '');
                     
-                    let textoCorregido = textoSinEspacios.replace(/©/g, '@');
-                    const matchCorreo = textoCorregido.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
-                    if (matchCorreo) document.getElementById('correo').value = matchCorreo[0].toLowerCase();
+                    const matchCorreo = textoSinEspacios.match(/[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}/);
+                    if (matchCorreo) document.getElementById('correo').value = matchCorreo[0];
 
                     const matchTelefono = textoSinEspacios.match(/(?:0414|0424|0412|0416|0426|02\d{2})\d{7}/);
                     if (matchTelefono) document.getElementById('telefono').value = matchTelefono[0];
@@ -553,7 +586,9 @@
                     if (matchModelo) document.getElementById('modelo').value = matchModelo[1];
 
                     const matchActividad = textoUpper.match(/(?:ACTIVIDAD\s+ECON[OÓ]MICA|ACTIVIDAD\s+COMERCIAL|RAMO)[\s\S]{0,35}?([A-ZÑ\s]{5,40})/);
-                    if (matchActividad) document.getElementById('actividad').value = matchActividad[1].replace(/\s+/g, ' ').trim();
+                    if (matchActividad) {
+                        document.getElementById('actividad').value = matchActividad[1].replace(/\s+/g, ' ').trim();
+                    }
                 }
 
                 if (tipoDoc === 'RIF') {
@@ -653,6 +688,7 @@
 
                         if (lineaUpper.includes('FIRMAS PERSONALES') && !lineaUpper.includes('NO POSEE')) {
                             estadoLectura = "CAPTURANDO_FIRMAS";
+                            
                             const matchCantidad = lineaUpper.match(/FIRMAS PERSONALES\D*(\d+)/);
                             if (matchCantidad) {
                                 firmasEsperadas = parseInt(matchCantidad[1], 10);
@@ -682,7 +718,9 @@
                         }
                     }
 
-                    if (direccionFiscal) document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
+                    if (direccionFiscal) {
+                        document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
+                    }
 
                     if (arrayFirmas.length > 0) {
                         let firmasUnicas = [...new Set(arrayFirmas)];
