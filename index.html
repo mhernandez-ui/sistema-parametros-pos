@@ -87,7 +87,7 @@
     </div>
 
     <div class="formulario">
-        <h2 style="margin-top: 0; font-size: 1.4rem; margin-bottom: 5px;">Instalaciones - Credicard</h2>
+        <h2 style="margin-top: 0; font-size: 1.4rem; margin-bottom: 5px;">Instalaciones - Credicard / Platco</h2>
         
         <form id="param-form">
             <div class="form-section-title">Datos del RIF</div>
@@ -118,11 +118,11 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Nº Afiliado</label>
-                    <input type="text" id="afiliado" placeholder="Ej: 73497418 o PENDIENTE" required>
+                    <input type="text" id="afiliado" placeholder="Ej: 73497418 o V0158219618001" required>
                 </div>
                 <div class="form-group">
                     <label>Serial Asignado</label>
-                    <input type="text" id="serial" placeholder="Ej: J79A00791552">
+                    <input type="text" id="serial" placeholder="Ej: J79A00791552 o 62179269">
                 </div>
             </div>
             <div class="form-row">
@@ -135,6 +135,14 @@
                     <input type="email" id="correo" placeholder="Ej: contacto@empresa.com">
                 </div>
             </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Actividad Comercial</label>
+                    <input type="text" id="actividad" placeholder="Ej: VENTA DE VIVERES">
+                </div>
+            </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label>Banco</label>
@@ -149,10 +157,15 @@
                     <label>Modelo POS</label>
                     <select id="modelo" required>
                         <option value="">Seleccione...</option>
-                        <option value="N910">N910</option>
+                        <option value="N950K">N950K</option>
+                        <option value="N750">N750</option>
                         <option value="N950S">N950S</option>
+                        <option value="N910">N910</option>
                         <option value="SP600">SP600</option>
+                        <option value="6210">6210</option>
+                        <option value="7210">7210</option>
                         <option value="ME51">ME51</option>
+                        <option value="ME60">ME60</option>
                     </select>
                 </div>
             </div>
@@ -206,6 +219,26 @@
         function resetZoom() {
             zoomActual = 1;
             previewImg.style.transform = `scale(1)`;
+        }
+
+        // --- FILTRO DE OPTIMIZACIÓN DE IMAGEN PARA PLANILLAS MANUSCRITAS ---
+        function optimizarImagenParaOCR(imgUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    // Aplicar alto contraste y escala de grises para resaltar tinta
+                    ctx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
+                    ctx.drawImage(img, 0, 0);
+                    
+                    resolve(canvas.toDataURL('image/jpeg', 1.0));
+                };
+                img.src = imgUrl;
+            });
         }
 
         fileInput.addEventListener('change', (e) => {
@@ -267,12 +300,14 @@
                 <option value="OTRO">Otro (Solo visual)</option>
             `;
             
-            selectClase.onchange = function() {
+            selectClase.onchange = async function() {
                 if (this.value !== "") {
                     this.classList.remove('pendiente');
                     if (this.value === 'RIF' || this.value === 'CORREO') {
                         if (file.type.startsWith('image/')) {
-                            ejecutarOCR(file, this.value);
+                            // Aplicar optimización de imagen antes del OCR para mejorar planillas a mano
+                            const imgOptimizada = await optimizarImagenParaOCR(urlTemporal);
+                            ejecutarOCR(imgOptimizada, this.value);
                         } else if (file.type === 'application/pdf') {
                             procesarPDF(file, this.value);
                         }
@@ -359,7 +394,9 @@
                     canvas.width = viewport.width;
                     
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    ejecutarOCR(canvas.toDataURL('image/png'), tipoDoc);
+                    // También optimizamos el renderizado del PDF
+                    const imgOptimizada = await optimizarImagenParaOCR(canvas.toDataURL('image/png'));
+                    ejecutarOCR(imgOptimizada, tipoDoc);
                 } catch (error) {
                     ocrLoading.style.display = 'none';
                 }
@@ -384,24 +421,35 @@
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
                 if (tipoDoc === 'CORREO') {
-                    const matchCorreo = textoPlano.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-                    if (matchCorreo) document.getElementById('correo').value = matchCorreo[0];
+                    // Limpieza y reparación común de correos en OCR
+                    let textoCorregido = textoPlano.replace(/©/g, '@').replace(/([a-zA-Z0-9._%+-]+)\s*@\s*([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '$1@$2');
+                    const matchCorreo = textoCorregido.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                    if (matchCorreo) document.getElementById('correo').value = matchCorreo[0].toLowerCase();
 
+                    // Teléfono
                     const matchTelefono = textoPlano.match(/(?:04\d{2}|02\d{2})[\s\-]?\d{3}[\s\-]?\d{4}/);
                     if (matchTelefono) document.getElementById('telefono').value = matchTelefono[0].replace(/\s/g, '');
 
-                    const matchSerial = textoPlano.match(/serial[\s\w:]*([A-Z0-9]{8,15})/i);
-                    if (matchSerial) document.getElementById('serial').value = matchSerial[1].toUpperCase();
+                    // Serial (Captura explícita de números o alfanuméricos evitando afiliado)
+                    const matchSerial = textoUpper.match(/(?:SERIAL|S\/N|SN)[\s\w:=]*([A-Z0-9]{8,15})/);
+                    if (matchSerial) document.getElementById('serial').value = matchSerial[1];
 
+                    // Operadora
                     if (textoUpper.includes('DIGITEL')) document.getElementById('operadora').value = 'DIGITEL';
                     else if (textoUpper.includes('MOVISTAR')) document.getElementById('operadora').value = 'MOVISTAR';
                     else if (textoUpper.includes('MOVILNET')) document.getElementById('operadora').value = 'MOVILNET';
 
-                    const matchModelo = textoUpper.match(/(N910|SP600|ME51|N950S)/);
+                    // Modelo (Lista actualizada)
+                    const matchModelo = textoUpper.match(/(N950K|N750|N950S|N910|SP600|6210|7210|ME51|ME60)/);
                     if (matchModelo) document.getElementById('modelo').value = matchModelo[1];
 
-                    const matchAfiliadoGeneral = textoPlano.match(/(?:c[oó]digo\s+de\s+afiliaci[oó]n|afiliaci[oó]n|afiliado)[\s:=]*(\d{8,10}|PENDIENTE)/i);
-                    if (matchAfiliadoGeneral) document.getElementById('afiliado').value = matchAfiliadoGeneral[1].toUpperCase();
+                    // Afiliado (Credicard 8 dígitos O Platco formato V0...)
+                    const matchAfiliadoGeneral = textoUpper.match(/(?:AFILIACI[OÓ]N|AFILIADO|C[OÓ]DIGO)[\s:=]*([JGVE]0\d{11,13}|\d{8}|PENDIENTE)/);
+                    if (matchAfiliadoGeneral) document.getElementById('afiliado').value = matchAfiliadoGeneral[1];
+
+                    // Actividad Comercial / Económica
+                    const matchActividad = textoUpper.match(/(?:ACTIVIDAD\s+ECON[OÓ]MICA|ACTIVIDAD\s+COMERCIAL|RAMO)[\s:=]+([^\n]+)/);
+                    if (matchActividad) document.getElementById('actividad').value = matchActividad[1].trim();
                 }
 
                 if (tipoDoc === 'RIF') {
@@ -500,11 +548,9 @@
                             }
                         }
 
-                        // --- Contador Estricto de Firmas Personales (Tolerante a puntos y comas) ---
                         if (lineaUpper.includes('FIRMAS PERSONALES') && !lineaUpper.includes('NO POSEE')) {
                             estadoLectura = "CAPTURANDO_FIRMAS";
                             
-                            // Extraer la cantidad permitida ignorando signos de puntuación como puntos o comas
                             const matchCantidad = lineaUpper.match(/FIRMAS PERSONALES\D*(\d+)/);
                             if (matchCantidad) {
                                 firmasEsperadas = parseInt(matchCantidad[1], 10);
@@ -512,7 +558,6 @@
                                 firmasEsperadas = 1; 
                             }
                             
-                            // Rescate si el texto de la firma está mezclado en la misma línea
                             let textoExtra = linea.replace(/FIRMAS PERSONALES\D*\d*/ig, '').replace(/^[^a-zA-Z0-9]+/, '').trim();
                             if (textoExtra.length > 3 && !textoExtra.toUpperCase().match(/(SISTEMAS EN L|SELLO H|CONDICI|MINISTERIO|GERENCIA)/)) {
                                 arrayFirmas.push(textoExtra);
@@ -583,6 +628,7 @@
                 telefono: document.getElementById('telefono').value,
                 correo: document.getElementById('correo').value,
                 serial: document.getElementById('serial').value,
+                actividad: document.getElementById('actividad').value,
                 banco: document.getElementById('banco').value,
                 modelo: document.getElementById('modelo').value,
                 comunicacion: document.getElementById('comunicacion').value,
@@ -599,7 +645,7 @@
                 const resultado = await response.json();
                 
                 if(resultado.status === "éxito") {
-                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nContribuyente: ${datosParaGuardar.contribuyente}\nDirección: ${datosParaGuardar.direccion}\nTeléfono: ${datosParaGuardar.telefono}\nCorreo: ${datosParaGuardar.correo}\nAfiliado: ${datosParaGuardar.afiliado}\nSerial: ${datosParaGuardar.serial}\nBanco: ${datosParaGuardar.banco}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
+                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nContribuyente: ${datosParaGuardar.contribuyente}\nDirección: ${datosParaGuardar.direccion}\nTeléfono: ${datosParaGuardar.telefono}\nCorreo: ${datosParaGuardar.correo}\nAfiliado: ${datosParaGuardar.afiliado}\nSerial: ${datosParaGuardar.serial}\nActividad: ${datosParaGuardar.actividad}\nBanco: ${datosParaGuardar.banco}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
                     resultadoCrm.style.display = 'block';
                     resultadoCrm.innerText = textoCrm + "\n\n(Puedes copiar este texto para pegarlo en tu sistema)";
                     
