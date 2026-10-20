@@ -50,20 +50,23 @@
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.8rem; color: #333; }
         
-        /* Efecto Visual de Selección de Casillas */
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 0.95rem; font-family: inherit; transition: all 0.3s;}
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #0d6efd; background-color: #e8f0fe; outline: none; box-shadow: 0 0 8px rgba(13,110,253,0.4);}
         
-        .form-row { display: flex; gap: 15px; }
-        .form-row .form-group { flex: 1; }
+        /* ILUMINACIÓN AZUL AL HACER CLIC EN LA CASILLA */
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #0d6efd; background-color: #e8f0fe; outline: none; box-shadow: 0 0 10px rgba(13,110,253,0.5);}
         
-        /* Botones del Formulario */
-        .botones-accion { display: flex; gap: 10px; margin-top: 15px; }
+        .form-row { display: flex; gap: 15px; align-items: flex-end;}
+        .form-row .form-group { flex: 1; margin-bottom: 0;}
+        
+        /* Separador de Correo Arroba */
+        .correo-separador { font-weight: bold; font-size: 1.2rem; color: #0d6efd; padding: 0 5px; }
+
+        .botones-accion { display: flex; gap: 10px; margin-top: 20px; }
         .btn-principal { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 2; font-weight: bold; transition: 0.2s;}
         .btn-principal:hover { background-color: #0b5ed7; }
         .btn-principal:disabled { background-color: #6c757d; cursor: not-allowed; }
-        .btn-secundario { background-color: #6c757d; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 1; font-weight: bold; transition: 0.2s;}
-        .btn-secundario:hover { background-color: #5a6268; }
+        .btn-secundario { background-color: #dc3545; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 1; font-weight: bold; transition: 0.2s;}
+        .btn-secundario:hover { background-color: #bb2d3b; }
 
         #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.4;}
     </style>
@@ -102,17 +105,17 @@
         <h2 style="margin-top: 0; font-size: 1.4rem; margin-bottom: 5px;">Instalaciones - Credicard / Platco</h2>
         
         <div id="indicador-recorte">
-            🎯 Recorte Mágico Activo: Dibuja un cuadro en el documento para extraer: <span id="campo-objetivo" style="text-decoration: underline; text-transform: uppercase;"></span>
+            🎯 Recorte Mágico Listo: Dibuja un cuadro en la imagen para enviar el texto a la casilla <span id="campo-objetivo" style="text-decoration: underline; text-transform: uppercase;"></span>
         </div>
 
         <form id="param-form">
             <div class="form-section-title">Datos del RIF</div>
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom:12px;">
                 <label>Nombre del Comercio / Firma Personal</label>
                 <input type="text" id="comercio" list="lista-firmas" placeholder="Se extraerá del RIF..." required>
                 <datalist id="lista-firmas"></datalist>
             </div>
-            <div class="form-row">
+            <div class="form-row" style="margin-bottom:12px;">
                 <div class="form-group">
                     <label>RIF</label>
                     <input type="text" id="rif" placeholder="Ej: J-12345678-9" required>
@@ -125,13 +128,48 @@
                     </select>
                 </div>
             </div>
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom:12px;">
                 <label>Dirección Fiscal</label>
                 <textarea id="direccion" rows="2" placeholder="Se extraerá del RIF..."></textarea>
             </div>
 
+            <div class="form-section-title">Datos Bancarios</div>
+            <div class="form-row" style="margin-bottom:12px;">
+                <div class="form-group" style="flex: 2;">
+                    <label>Nº de Cuenta (20 Dígitos)</label>
+                    <input type="text" id="cuenta" placeholder="Ej: 01020000000000000000" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Banco (Auto-Selección)</label>
+                    <select id="banco" required>
+                        <option value="">Seleccione...</option>
+                        <option value="BANCO DE VENEZUELA" data-pref="0102">Venezuela</option>
+                        <option value="VENEZOLANO DE CREDITO" data-pref="0104">Venezolano de Créd.</option>
+                        <option value="MERCANTIL" data-pref="0105">Mercantil</option>
+                        <option value="PROVINCIAL" data-pref="0108">Provincial</option>
+                        <option value="BANCARIBE" data-pref="0114">Bancaribe</option>
+                        <option value="EXTERIOR" data-pref="0115">Exterior</option>
+                        <option value="CARONI" data-pref="0128">Caroní</option>
+                        <option value="BANESCO" data-pref="0134">Banesco</option>
+                        <option value="PLAZA" data-pref="0138">Plaza</option>
+                        <option value="BFC" data-pref="0151">BFC Fondo Común</option>
+                        <option value="100% BANCO" data-pref="0156">100% Banco</option>
+                        <option value="DEL SUR" data-pref="0157">Del Sur</option>
+                        <option value="TESORO" data-pref="0163">Tesoro</option>
+                        <option value="BANCRECER" data-pref="0168">Bancrecer</option>
+                        <option value="MI BANCO" data-pref="0169">Mi Banco</option>
+                        <option value="ACTIVO" data-pref="0171">Activo</option>
+                        <option value="BANCAMIGA" data-pref="0172">Bancamiga</option>
+                        <option value="BANPLUS" data-pref="0174">Banplus</option>
+                        <option value="BICENTENARIO" data-pref="0175">Bicentenario</option>
+                        <option value="BANFANB" data-pref="0177">Banfanb</option>
+                        <option value="BNC" data-pref="0191">BNC Nacional de Crédito</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="form-section-title">Datos de la Solicitud (Correo / Planilla)</div>
-            <div class="form-row">
+            <div class="form-row" style="margin-bottom:12px;">
                 <div class="form-group">
                     <label>Nº Afiliado</label>
                     <input type="text" id="afiliado" placeholder="Ej: 73497418 o V0158219618001" required>
@@ -141,34 +179,32 @@
                     <input type="text" id="serial" placeholder="Ej: NFD300348979 o 62179269">
                 </div>
             </div>
-            <div class="form-row">
+            
+            <div class="form-row" style="margin-bottom:12px;">
                 <div class="form-group">
                     <label>Teléfono</label>
                     <input type="text" id="telefono" placeholder="Ej: 0414-1234567">
                 </div>
-                <div class="form-group">
-                    <label>Correo Electrónico</label>
-                    <input type="email" id="correo" placeholder="Ej: contacto@empresa.com">
+            </div>
+
+            <!-- ESTRUCTURA DIVIDIDA DEL CORREO -->
+            <div class="form-group" style="margin-bottom:12px;">
+                <label>Correo Electrónico Dividido</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="text" id="correo_usuario" placeholder="usuario" style="flex: 1; text-align: right;">
+                    <span class="correo-separador">@</span>
+                    <input type="text" id="correo_dominio" placeholder="dominio.com" style="flex: 1;">
                 </div>
             </div>
             
-            <div class="form-row">
+            <div class="form-row" style="margin-bottom:12px;">
                 <div class="form-group">
                     <label>Actividad Comercial</label>
                     <input type="text" id="actividad" placeholder="Ej: VENTA DE VIVERES">
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Banco</label>
-                    <select id="banco" required>
-                        <option value="">Seleccione...</option>
-                        <option value="BANCARIBE">Bancaribe</option>
-                        <option value="DEL SUR">Del Sur</option>
-                        <option value="CARONI">Caroní</option>
-                    </select>
-                </div>
+            <div class="form-row" style="margin-bottom:12px;">
                 <div class="form-group">
                     <label>Modelo POS</label>
                     <select id="modelo" required>
@@ -184,8 +220,6 @@
                         <option value="ME60">ME60</option>
                     </select>
                 </div>
-            </div>
-            <div class="form-row">
                 <div class="form-group">
                     <label>Comunicación</label>
                     <select id="comunicacion" required>
@@ -243,7 +277,13 @@
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(input => {
             input.addEventListener('focus', (e) => {
                 activeInputId = e.target.id;
-                const labelText = e.target.previousElementSibling.innerText;
+                let labelText = "";
+                // Buscar el label superior asociado
+                if(e.target.parentElement.previousElementSibling && e.target.parentElement.previousElementSibling.tagName === 'LABEL') {
+                    labelText = e.target.parentElement.previousElementSibling.innerText;
+                } else {
+                    labelText = e.target.previousElementSibling.innerText;
+                }
                 campoObjetivo.innerText = labelText;
                 indicadorRecorte.style.display = 'block';
             });
@@ -251,7 +291,7 @@
 
         // --- BOTÓN LIMPIAR TODO ---
         btnLimpiar.addEventListener('click', () => {
-            if(confirm("¿Estás seguro de que deseas limpiar toda la información y eliminar los documentos?")) {
+            if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
                 form.reset();
                 document.getElementById('comercio').style.border = "1px solid #ccc";
                 archivosMemoria.forEach(a => URL.revokeObjectURL(a.url));
@@ -281,7 +321,7 @@
         // --- HERRAMIENTA DE RECORTE MÁGICO (MOUSE EVENTS) ---
         canvas.addEventListener('mousedown', (e) => {
             if (!activeInputId) {
-                alert("Primero haz clic en la casilla iluminada en azul del formulario que deseas rellenar.");
+                alert("Primero haz clic en la casilla del formulario (se iluminará en azul) donde quieres guardar el dato.");
                 return;
             }
             isDrawing = true;
@@ -344,18 +384,32 @@
                 const result = await Tesseract.recognize(imgData, 'spa');
                 let textoExtraido = result.data.text.trim();
                 
-                // === FILTROS DE CORRECCIÓN PARA EL RECORTE ===
-                if(activeInputId === 'correo') {
-                    textoExtraido = textoExtraido.toLowerCase()
-                        .replace(/\s+/g, '') // Quita todos los espacios
-                        .replace(/(?:\(a\)|[a]|\{a\}|©|®|&|'a'|"a")/g, '@'); // Forzar la aparición del arroba si se leyó mal
+                // === LÓGICA ESPECIAL DE RECORTE PARA CORREO Y CUENTA BANCARIA ===
+                if(activeInputId === 'correo_usuario' || activeInputId === 'correo_dominio') {
+                    // Limpieza agresiva de espacios y forzado de arroba si el OCR falló
+                    let correoLimpio = textoExtraido.replace(/\s+/g, '').toLowerCase();
+                    correoLimpio = correoLimpio.replace(/(?:\(a\)|[a]|\{a\}|©|®|&|'a'|"a")/g, '@');
                     
-                    // Si recorta solo el texto, no tiene arroba, pero es un dominio conocido: inyectarlo
-                    if (!textoExtraido.includes('@') && textoExtraido.match(/(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com|cantv\.net)/)) {
-                        textoExtraido = textoExtraido.replace(/(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com|cantv\.net)/, '@$1');
-                        textoExtraido = textoExtraido.replace(/@@/g, '@'); // Limpiar duplicados accidentales
+                    if (!correoLimpio.includes('@') && correoLimpio.match(/(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com|cantv\.net)/)) {
+                        correoLimpio = correoLimpio.replace(/(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com|cantv\.net)/, '@$1');
+                    }
+
+                    // Si hay un arroba, lo partimos mágicamente en las dos casillas
+                    let partes = correoLimpio.split('@');
+                    if (partes.length === 2) {
+                        document.getElementById('correo_usuario').value = partes[0];
+                        document.getElementById('correo_dominio').value = partes[1];
+                        textoExtraido = null; // Evita la sobreescritura abajo
+                    } else {
+                        textoExtraido = correoLimpio; // Si recorta solo una mitad, se envía normal
                     }
                 }
+                
+                if(activeInputId === 'cuenta') {
+                    textoExtraido = textoExtraido.replace(/\D/g, ''); // Deja solo números
+                    evaluarBanco(textoExtraido); // Auto-selecciona el banco
+                }
+
                 if(activeInputId === 'telefono') textoExtraido = textoExtraido.replace(/[^\d\-\s]/g, '');
                 if(activeInputId === 'serial') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
                 if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
@@ -363,8 +417,6 @@
                 if (textoExtraido) {
                     const inputTarget = document.getElementById(activeInputId);
                     inputTarget.value = textoExtraido;
-                } else {
-                    alert("No se detectó texto en el área seleccionada.");
                 }
 
             } catch (error) {
@@ -374,7 +426,20 @@
             }
         }
 
-        // --- FILTRO DE OPTIMIZACIÓN DE IMAGEN PARA PLANILLAS (AUTO-OCR) ---
+        // --- EVALUAR BANCO SEGÚN PREFIJO DE 4 DÍGITOS ---
+        function evaluarBanco(numeroCuenta) {
+            if (numeroCuenta.length >= 4) {
+                const prefijo = numeroCuenta.substring(0, 4);
+                const selectBanco = document.getElementById('banco');
+                for (let option of selectBanco.options) {
+                    if (option.getAttribute('data-pref') === prefijo) {
+                        selectBanco.value = option.value;
+                        break;
+                    }
+                }
+            }
+        }
+
         function optimizarImagenParaOCR(imgUrl) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -391,7 +456,6 @@
             });
         }
 
-        // --- EVENTOS DE CARGA ---
         fileInput.addEventListener('change', (e) => { Array.from(e.target.files).forEach(agregarArchivo); fileInput.value = ''; });
         zonaArrastre.addEventListener('dragover', (e) => { e.preventDefault(); overlay.classList.add('dragover'); });
         zonaArrastre.addEventListener('dragleave', () => { overlay.classList.remove('dragover'); });
@@ -404,13 +468,11 @@
             for (let index in items) {
                 const item = items[index];
                 if (item.kind === 'file') {
-                    const blob = item.getAsFile();
-                    agregarArchivo(blob);
+                    agregarArchivo(item.getAsFile());
                 }
             }
         });
 
-        // --- GESTOR DE ARCHIVOS ---
         function agregarArchivo(file) {
             const urlTemporal = URL.createObjectURL(file);
             const id = Date.now() + Math.random();
@@ -443,14 +505,14 @@
                 <option value="">¿Tipo?</option>
                 <option value="RIF">RIF</option>
                 <option value="CORREO">Correo / Planilla</option>
-                <option value="BANCO">Banco (Solo visual)</option>
+                <option value="BANCO">Certificación Bancaria</option>
                 <option value="OTRO">Otro (Solo visual)</option>
             `;
             
             selectClase.onchange = async function() {
                 if (this.value !== "") {
                     this.classList.remove('pendiente');
-                    if (this.value === 'RIF' || this.value === 'CORREO') {
+                    if (this.value === 'RIF' || this.value === 'CORREO' || this.value === 'BANCO') {
                         const archivoActual = archivosMemoria.find(a => a.id === id);
                         ejecutarOCRAuto(archivoActual.renderedUrl, this.value);
                     }
@@ -539,12 +601,14 @@
                 overlay.style.display = 'flex';
                 zoomControls.style.display = 'none';
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                indicadorRecorte.style.display = 'none';
+                activeInputId = null;
             } else {
                 mostrarArchivo(archivosMemoria[archivosMemoria.length - 1].id);
             }
         }
 
-        // --- MOTOR OCR AUTOMÁTICO (ASPIRADORA DE DATOS) ---
+        // --- MOTOR OCR AUTOMÁTICO (ASPIRADORA DE DATOS GENERAL) ---
         async function ejecutarOCRAuto(imagenOSource, tipoDoc) {
             if (tipoDoc === 'RIF' && document.getElementById('rif').value !== "") {
                 alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información.");
@@ -561,13 +625,27 @@
                 const textoUpper = textoPlano.toUpperCase();
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
+                // === LÓGICA DE EXTRACCIÓN BANCARIA GLOBAL ===
+                if (tipoDoc === 'BANCO' || tipoDoc === 'CORREO') {
+                    const textoSinEspacios = textoPlano.replace(/\s+/g, '');
+                    // Busca cuenta venezolana de 20 dígitos empezando con "01"
+                    const matchCuenta = textoSinEspacios.match(/(?:01\d{2})\d{16}/);
+                    if (matchCuenta) {
+                        document.getElementById('cuenta').value = matchCuenta[0];
+                        evaluarBanco(matchCuenta[0]);
+                    }
+                }
+
                 if (tipoDoc === 'CORREO') {
-                    // === FILTRO AGRESIVO DE CORREOS AUTOMÁTICO ===
-                    const textoEmailBase = textoPlano.toLowerCase().replace(/(?:\(a\)|[a]|\{a\}|©|®|&| a )/g, '@');
-                    const textoSinEspacios = textoEmailBase.replace(/\s+/g, '');
+                    const textoSinEspacios = textoPlano.replace(/\s+/g, '');
                     
-                    const matchCorreo = textoSinEspacios.match(/[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}/);
-                    if (matchCorreo) document.getElementById('correo').value = matchCorreo[0];
+                    let textoCorregido = textoSinEspacios.replace(/(?:\(a\)|[a]|\{a\}|©|®|&)/g, '@');
+                    const matchCorreo = textoCorregido.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+                    if (matchCorreo) {
+                        let partesCorreo = matchCorreo[0].toLowerCase().split('@');
+                        document.getElementById('correo_usuario').value = partesCorreo[0];
+                        document.getElementById('correo_dominio').value = partesCorreo[1];
+                    }
 
                     const matchTelefono = textoSinEspacios.match(/(?:0414|0424|0412|0416|0426|02\d{2})\d{7}/);
                     if (matchTelefono) document.getElementById('telefono').value = matchTelefono[0];
@@ -688,7 +766,6 @@
 
                         if (lineaUpper.includes('FIRMAS PERSONALES') && !lineaUpper.includes('NO POSEE')) {
                             estadoLectura = "CAPTURANDO_FIRMAS";
-                            
                             const matchCantidad = lineaUpper.match(/FIRMAS PERSONALES\D*(\d+)/);
                             if (matchCantidad) {
                                 firmasEsperadas = parseInt(matchCantidad[1], 10);
@@ -755,6 +832,12 @@
             btnProcesar.innerText = "Registrando...";
             btnProcesar.disabled = true;
 
+            // Reconstruir el correo desde las dos casillas
+            let correoFinal = "";
+            let u = document.getElementById('correo_usuario').value.trim();
+            let d = document.getElementById('correo_dominio').value.trim();
+            if(u || d) correoFinal = u + "@" + d;
+
             const datosParaGuardar = {
                 comercio: document.getElementById('comercio').value,
                 direccion: document.getElementById('direccion').value,
@@ -762,9 +845,10 @@
                 contribuyente: document.getElementById('contribuyente').value,
                 afiliado: document.getElementById('afiliado').value,
                 telefono: document.getElementById('telefono').value,
-                correo: document.getElementById('correo').value,
+                correo: correoFinal,
                 serial: document.getElementById('serial').value,
                 actividad: document.getElementById('actividad').value,
+                cuenta: document.getElementById('cuenta').value,
                 banco: document.getElementById('banco').value,
                 modelo: document.getElementById('modelo').value,
                 comunicacion: document.getElementById('comunicacion').value,
@@ -781,7 +865,7 @@
                 const resultado = await response.json();
                 
                 if(resultado.status === "éxito") {
-                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nContribuyente: ${datosParaGuardar.contribuyente}\nDirección: ${datosParaGuardar.direccion}\nTeléfono: ${datosParaGuardar.telefono}\nCorreo: ${datosParaGuardar.correo}\nAfiliado: ${datosParaGuardar.afiliado}\nSerial: ${datosParaGuardar.serial}\nActividad: ${datosParaGuardar.actividad}\nBanco: ${datosParaGuardar.banco}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
+                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nContribuyente: ${datosParaGuardar.contribuyente}\nDirección: ${datosParaGuardar.direccion}\nTeléfono: ${datosParaGuardar.telefono}\nCorreo: ${datosParaGuardar.correo}\nAfiliado: ${datosParaGuardar.afiliado}\nSerial: ${datosParaGuardar.serial}\nCuenta: ${datosParaGuardar.cuenta}\nBanco: ${datosParaGuardar.banco}\nActividad: ${datosParaGuardar.actividad}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
                     resultadoCrm.style.display = 'block';
                     resultadoCrm.innerText = textoCrm + "\n\n(Puedes copiar este texto para pegarlo en tu sistema)";
                     
