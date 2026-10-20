@@ -51,15 +51,10 @@
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.8rem; color: #333; }
         
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 0.95rem; font-family: inherit; transition: all 0.3s;}
-        
-        /* ILUMINACIÓN AZUL AL HACER CLIC EN LA CASILLA */
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #0d6efd; background-color: #e8f0fe; outline: none; box-shadow: 0 0 10px rgba(13,110,253,0.5);}
         
         .form-row { display: flex; gap: 15px; align-items: flex-end;}
         .form-row .form-group { flex: 1; margin-bottom: 0;}
-        
-        /* Separador de Correo Arroba */
-        .correo-separador { font-weight: bold; font-size: 1.2rem; color: #0d6efd; padding: 0 5px; }
 
         .botones-accion { display: flex; gap: 10px; margin-top: 20px; }
         .btn-principal { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 2; font-weight: bold; transition: 0.2s;}
@@ -69,6 +64,7 @@
         .btn-secundario:hover { background-color: #bb2d3b; }
 
         #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.4;}
+        #enlace-drive { margin-top: 10px; display: block; color: #0dcaf0; font-weight: bold; text-decoration: underline;}
     </style>
 </head>
 <body>
@@ -185,15 +181,9 @@
                     <label>Teléfono</label>
                     <input type="text" id="telefono" placeholder="Ej: 0414-1234567">
                 </div>
-            </div>
-
-            <!-- ESTRUCTURA DIVIDIDA DEL CORREO -->
-            <div class="form-group" style="margin-bottom:12px;">
-                <label>Correo Electrónico Dividido</label>
-                <div style="display: flex; align-items: center;">
-                    <input type="text" id="correo_usuario" placeholder="usuario" style="flex: 1; text-align: right;">
-                    <span class="correo-separador">@</span>
-                    <input type="text" id="correo_dominio" placeholder="dominio.com" style="flex: 1;">
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="correo" placeholder="Ej: contacto@empresa.com">
                 </div>
             </div>
             
@@ -273,23 +263,15 @@
         let startX, startY;
         let activeInputId = null;
 
-        // --- RASTREO DEL CAMPO ACTIVO PARA RECORTE MÁGICO ---
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(input => {
             input.addEventListener('focus', (e) => {
                 activeInputId = e.target.id;
-                let labelText = "";
-                // Buscar el label superior asociado
-                if(e.target.parentElement.previousElementSibling && e.target.parentElement.previousElementSibling.tagName === 'LABEL') {
-                    labelText = e.target.parentElement.previousElementSibling.innerText;
-                } else {
-                    labelText = e.target.previousElementSibling.innerText;
-                }
+                let labelText = e.target.previousElementSibling.innerText;
                 campoObjetivo.innerText = labelText;
                 indicadorRecorte.style.display = 'block';
             });
         });
 
-        // --- BOTÓN LIMPIAR TODO ---
         btnLimpiar.addEventListener('click', () => {
             if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
                 form.reset();
@@ -307,7 +289,6 @@
             }
         });
 
-        // --- CONTROLES DE ZOOM ---
         function cambiarZoom(incremento) {
             zoomActual += incremento;
             if (zoomActual < 0.4) zoomActual = 0.4; 
@@ -318,7 +299,6 @@
             canvasContainer.style.transform = `scale(1)`;
         }
 
-        // --- HERRAMIENTA DE RECORTE MÁGICO (MOUSE EVENTS) ---
         canvas.addEventListener('mousedown', (e) => {
             if (!activeInputId) {
                 alert("Primero haz clic en la casilla del formulario (se iluminará en azul) donde quieres guardar el dato.");
@@ -355,7 +335,6 @@
 
             const endX = e.offsetX;
             const endY = e.offsetY;
-
             const ratioX = canvas.width / canvas.clientWidth;
             const ratioY = canvas.height / canvas.clientHeight;
 
@@ -384,30 +363,13 @@
                 const result = await Tesseract.recognize(imgData, 'spa');
                 let textoExtraido = result.data.text.trim();
                 
-                // === LÓGICA ESPECIAL DE RECORTE PARA CORREO Y CUENTA BANCARIA ===
-                if(activeInputId === 'correo_usuario' || activeInputId === 'correo_dominio') {
-                    // Limpieza agresiva de espacios y forzado de arroba si el OCR falló
-                    let correoLimpio = textoExtraido.replace(/\s+/g, '').toLowerCase();
-                    correoLimpio = correoLimpio.replace(/(?:\(a\)|[a]|\{a\}|©|®|&|'a'|"a")/g, '@');
-                    
-                    if (!correoLimpio.includes('@') && correoLimpio.match(/(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com|cantv\.net)/)) {
-                        correoLimpio = correoLimpio.replace(/(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com|cantv\.net)/, '@$1');
-                    }
-
-                    // Si hay un arroba, lo partimos mágicamente en las dos casillas
-                    let partes = correoLimpio.split('@');
-                    if (partes.length === 2) {
-                        document.getElementById('correo_usuario').value = partes[0];
-                        document.getElementById('correo_dominio').value = partes[1];
-                        textoExtraido = null; // Evita la sobreescritura abajo
-                    } else {
-                        textoExtraido = correoLimpio; // Si recorta solo una mitad, se envía normal
-                    }
+                if(activeInputId === 'correo') {
+                    textoExtraido = textoExtraido.replace(/\s+/g, '').toLowerCase();
                 }
                 
                 if(activeInputId === 'cuenta') {
-                    textoExtraido = textoExtraido.replace(/\D/g, ''); // Deja solo números
-                    evaluarBanco(textoExtraido); // Auto-selecciona el banco
+                    textoExtraido = textoExtraido.replace(/\D/g, ''); 
+                    evaluarBanco(textoExtraido); 
                 }
 
                 if(activeInputId === 'telefono') textoExtraido = textoExtraido.replace(/[^\d\-\s]/g, '');
@@ -426,7 +388,6 @@
             }
         }
 
-        // --- EVALUAR BANCO SEGÚN PREFIJO DE 4 DÍGITOS ---
         function evaluarBanco(numeroCuenta) {
             if (numeroCuenta.length >= 4) {
                 const prefijo = numeroCuenta.substring(0, 4);
@@ -474,11 +435,13 @@
         });
 
         function agregarArchivo(file) {
+            // Guardamos el archivo original para enviarlo luego a Drive
             const urlTemporal = URL.createObjectURL(file);
             const id = Date.now() + Math.random();
             
             preRenderizarArchivo(file, urlTemporal).then((renderedUrl) => {
-                archivosMemoria.push({ id, file, url: urlTemporal, renderedUrl: renderedUrl });
+                // Almacenamos el archivo original (`file`) para Drive y el renderizado para OCR
+                archivosMemoria.push({ id, file: file, url: urlTemporal, renderedUrl: renderedUrl });
                 mostrarArchivo(id);
             });
             
@@ -608,7 +571,6 @@
             }
         }
 
-        // --- MOTOR OCR AUTOMÁTICO (ASPIRADORA DE DATOS GENERAL) ---
         async function ejecutarOCRAuto(imagenOSource, tipoDoc) {
             if (tipoDoc === 'RIF' && document.getElementById('rif').value !== "") {
                 alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información.");
@@ -625,10 +587,8 @@
                 const textoUpper = textoPlano.toUpperCase();
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
-                // === LÓGICA DE EXTRACCIÓN BANCARIA GLOBAL ===
                 if (tipoDoc === 'BANCO' || tipoDoc === 'CORREO') {
                     const textoSinEspacios = textoPlano.replace(/\s+/g, '');
-                    // Busca cuenta venezolana de 20 dígitos empezando con "01"
                     const matchCuenta = textoSinEspacios.match(/(?:01\d{2})\d{16}/);
                     if (matchCuenta) {
                         document.getElementById('cuenta').value = matchCuenta[0];
@@ -638,13 +598,9 @@
 
                 if (tipoDoc === 'CORREO') {
                     const textoSinEspacios = textoPlano.replace(/\s+/g, '');
-                    
-                    let textoCorregido = textoSinEspacios.replace(/(?:\(a\)|[a]|\{a\}|©|®|&)/g, '@');
-                    const matchCorreo = textoCorregido.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+                    const matchCorreo = textoSinEspacios.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
                     if (matchCorreo) {
-                        let partesCorreo = matchCorreo[0].toLowerCase().split('@');
-                        document.getElementById('correo_usuario').value = partesCorreo[0];
-                        document.getElementById('correo_dominio').value = partesCorreo[1];
+                        document.getElementById('correo').value = matchCorreo[0].toLowerCase();
                     }
 
                     const matchTelefono = textoSinEspacios.match(/(?:0414|0424|0412|0416|0426|02\d{2})\d{7}/);
@@ -674,8 +630,6 @@
                     const inputComercio = document.getElementById('comercio');
                     listaFirmas.innerHTML = '';
                     let arrayFirmas = [];
-                    let firmasEsperadas = 0;
-                    let firmasCapturadas = 0;
 
                     const matchCondicion = textoPlano.match(/Condici[oó]n:([^\n]+)/i);
                     if (matchCondicion) {
@@ -766,18 +720,9 @@
 
                         if (lineaUpper.includes('FIRMAS PERSONALES') && !lineaUpper.includes('NO POSEE')) {
                             estadoLectura = "CAPTURANDO_FIRMAS";
-                            const matchCantidad = lineaUpper.match(/FIRMAS PERSONALES\D*(\d+)/);
-                            if (matchCantidad) {
-                                firmasEsperadas = parseInt(matchCantidad[1], 10);
-                            } else {
-                                firmasEsperadas = 1; 
-                            }
-                            
                             let textoExtra = linea.replace(/FIRMAS PERSONALES\D*\d*/ig, '').replace(/^[^a-zA-Z0-9]+/, '').trim();
                             if (textoExtra.length > 3 && !textoExtra.toUpperCase().match(/(SISTEMAS EN L|SELLO H|CONDICI|MINISTERIO|GERENCIA)/)) {
                                 arrayFirmas.push(textoExtra);
-                                firmasCapturadas++;
-                                if (firmasCapturadas >= firmasEsperadas) estadoLectura = "FIN";
                             }
                             continue;
                         }
@@ -789,8 +734,6 @@
                             }
                             if (linea.length > 3 && !lineaUpper.includes('FIRMAS PERSONALES')) {
                                 arrayFirmas.push(linea);
-                                firmasCapturadas++;
-                                if (firmasCapturadas >= firmasEsperadas) estadoLectura = "FIN";
                             }
                         }
                     }
@@ -829,14 +772,24 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            btnProcesar.innerText = "Registrando...";
+            btnProcesar.innerText = "Registrando y Subiendo a Drive...";
             btnProcesar.disabled = true;
 
-            // Reconstruir el correo desde las dos casillas
-            let correoFinal = "";
-            let u = document.getElementById('correo_usuario').value.trim();
-            let d = document.getElementById('correo_dominio').value.trim();
-            if(u || d) correoFinal = u + "@" + d;
+            // --- LÓGICA DE CARGA DE ARCHIVOS A BASE64 PARA GOOGLE DRIVE ---
+            const filePromises = archivosMemoria.map(a => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve({
+                        nombre: a.file.name || 'documento_' + Date.now(),
+                        mimeType: a.file.type,
+                        base64: reader.result.split(',')[1]
+                    });
+                    reader.onerror = reject;
+                    reader.readAsDataURL(a.file);
+                });
+            });
+
+            const archivosBase64 = await Promise.all(filePromises);
 
             const datosParaGuardar = {
                 comercio: document.getElementById('comercio').value,
@@ -845,14 +798,15 @@
                 contribuyente: document.getElementById('contribuyente').value,
                 afiliado: document.getElementById('afiliado').value,
                 telefono: document.getElementById('telefono').value,
-                correo: correoFinal,
+                correo: document.getElementById('correo').value,
                 serial: document.getElementById('serial').value,
                 actividad: document.getElementById('actividad').value,
                 cuenta: document.getElementById('cuenta').value,
                 banco: document.getElementById('banco').value,
                 modelo: document.getElementById('modelo').value,
                 comunicacion: document.getElementById('comunicacion').value,
-                operadora: document.getElementById('operadora').value
+                operadora: document.getElementById('operadora').value,
+                archivos: archivosBase64
             };
 
             try {
@@ -865,9 +819,41 @@
                 const resultado = await response.json();
                 
                 if(resultado.status === "éxito") {
-                    const textoCrm = `--- DATOS PARA CRM ---\nComercio: ${datosParaGuardar.comercio}\nRIF: ${datosParaGuardar.rif}\nContribuyente: ${datosParaGuardar.contribuyente}\nDirección: ${datosParaGuardar.direccion}\nTeléfono: ${datosParaGuardar.telefono}\nCorreo: ${datosParaGuardar.correo}\nAfiliado: ${datosParaGuardar.afiliado}\nSerial: ${datosParaGuardar.serial}\nCuenta: ${datosParaGuardar.cuenta}\nBanco: ${datosParaGuardar.banco}\nActividad: ${datosParaGuardar.actividad}\nModelo POS: ${datosParaGuardar.modelo}\nComunicación: ${datosParaGuardar.comunicacion} / ${datosParaGuardar.operadora}\n----------------------`;
+                    
+                    // --- ESTRUCTURACIÓN DINÁMICA DEL TEXTO PARA EL CRM ---
+                    const tipoPersona = (datosParaGuardar.rif.startsWith('V') || datosParaGuardar.rif.startsWith('E')) ? 'NATURAL' : 'JURÍDICA';
+                    const prefijoRif = datosParaGuardar.rif.charAt(0);
+                    const numeroRif = datosParaGuardar.rif.substring(2); // Asumiendo formato V-12345678-9
+                    
+                    let textoCrm = "";
+                    
+                    if (tipoPersona === 'NATURAL') {
+                        textoCrm = `--- INFORMACIÓN DE COMERCIO (NATURAL) ---\n` +
+                                   `Tipo Persona: Natural\n` +
+                                   `Tipo: ${prefijoRif} | Nro. Documento RIF: ${numeroRif}\n` +
+                                   `Correo: ${datosParaGuardar.correo}\n` +
+                                   `Nombres y Apellidos / Firma: ${datosParaGuardar.comercio}\n` +
+                                   `Teléfono: ${datosParaGuardar.telefono}\n` +
+                                   `Contribuyente Especial: ${datosParaGuardar.contribuyente}\n` +
+                                   `Actividad Comercial: ${datosParaGuardar.actividad}\n` +
+                                   `-----------------------------------------\n` +
+                                   `Afiliado: ${datosParaGuardar.afiliado} | Serial: ${datosParaGuardar.serial} | Banco: ${datosParaGuardar.banco} | Cuenta: ${datosParaGuardar.cuenta} | POS: ${datosParaGuardar.modelo}`;
+                    } else {
+                        textoCrm = `--- INFORMACIÓN DE COMERCIO (JURÍDICA) ---\n` +
+                                   `Tipo Persona: Jurídica\n` +
+                                   `Tipo: ${prefijoRif} | Nro. Documento RIF: ${numeroRif}\n` +
+                                   `Razón Social: ${datosParaGuardar.comercio}\n` +
+                                   `Razón Comercial: ${datosParaGuardar.comercio}\n` +
+                                   `Correo: ${datosParaGuardar.correo}\n` +
+                                   `Teléfono: ${datosParaGuardar.telefono}\n` +
+                                   `Contribuyente Especial: ${datosParaGuardar.contribuyente}\n` +
+                                   `Actividad Comercial: ${datosParaGuardar.actividad}\n` +
+                                   `------------------------------------------\n` +
+                                   `Afiliado: ${datosParaGuardar.afiliado} | Serial: ${datosParaGuardar.serial} | Banco: ${datosParaGuardar.banco} | Cuenta: ${datosParaGuardar.cuenta} | POS: ${datosParaGuardar.modelo}`;
+                    }
+
                     resultadoCrm.style.display = 'block';
-                    resultadoCrm.innerText = textoCrm + "\n\n(Puedes copiar este texto para pegarlo en tu sistema)";
+                    resultadoCrm.innerHTML = textoCrm + `<br><br>(Puedes copiar este texto para tu CRM)<br><br><a id="enlace-drive" href="${resultado.folderUrl}" target="_blank">📁 Abrir Expediente en Google Drive</a>`;
                     
                     form.reset();
                     document.getElementById('comercio').style.border = "1px solid #ccc";
@@ -884,7 +870,7 @@
                     alert("Error en el script: " + resultado.mensaje);
                 }
             } catch (error) {
-                alert("Fallo de conexión.");
+                alert("Fallo de conexión. " + error);
             } finally {
                 btnProcesar.innerText = "Cargar a Sheets y Generar CRM";
                 btnProcesar.disabled = false;
