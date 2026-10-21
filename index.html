@@ -56,8 +56,6 @@
 
         .form-row { display: flex; gap: 15px; align-items: flex-end;}
         .form-row .form-group { flex: 1; margin-bottom: 0;}
-        
-        .correo-separador { font-weight: bold; font-size: 1.2rem; color: #0d6efd; padding: 0 5px; }
 
         .botones-accion { display: flex; gap: 10px; margin-top: 20px; }
         .btn-principal { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 2; font-weight: bold; transition: 0.2s;}
@@ -117,7 +115,7 @@
             <div class="form-row" style="margin-bottom:12px;">
                 <div class="form-group">
                     <label>RIF</label>
-                    <input type="text" id="rif" placeholder="Ej: J-12345678-9" required>
+                    <input type="text" id="rif" placeholder="Ej: J123456789" required>
                 </div>
                 <div class="form-group">
                     <label>Tipo de Contribuyente</label>
@@ -163,11 +161,7 @@
                 </div>
                 <div class="form-group">
                     <label>Correo Electrónico</label>
-                    <div style="display: flex; align-items: center;">
-                        <input type="text" id="correo_usuario" placeholder="usuario" style="flex: 1; text-align: right;" required>
-                        <span class="correo-separador">@</span>
-                        <input type="text" id="correo_dominio" placeholder="dominio.com" style="flex: 1;" required>
-                    </div>
+                    <input type="email" id="correo" placeholder="Ej: contacto@empresa.com" required>
                 </div>
             </div>
             
@@ -302,7 +296,7 @@
                 }
                 campoObjetivo.innerText = labelText;
                 indicadorRecorte.style.display = 'block';
-                input.classList.remove('input-error');
+                input.classList.remove('input-error'); 
             });
         });
 
@@ -399,29 +393,13 @@
                 const result = await Tesseract.recognize(imgData, 'spa');
                 let textoExtraido = result.data.text.trim();
                 
-                if(activeInputId === 'correo_usuario' || activeInputId === 'correo_dominio') {
-                    let correoLimpio = textoExtraido.replace(/\s+/g, '').toLowerCase();
-                    correoLimpio = correoLimpio.replace(/(?:\(a\)|[a]|\{a\}|©|®|&|'a'|"a")/g, '@');
-                    
-                    if (!correoLimpio.includes('@') && correoLimpio.match(/(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com|cantv\.net)/)) {
-                        correoLimpio = correoLimpio.replace(/(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com|cantv\.net)/, '@$1');
-                    }
-
-                    let partes = correoLimpio.split('@');
-                    if (partes.length === 2) {
-                        document.getElementById('correo_usuario').value = partes[0];
-                        document.getElementById('correo_dominio').value = partes[1];
-                        textoExtraido = null; 
-                    } else {
-                        textoExtraido = correoLimpio; 
-                    }
+                if(activeInputId === 'correo') {
+                    textoExtraido = textoExtraido.replace(/\s+/g, '').toLowerCase();
                 }
-                
                 if(activeInputId === 'cuenta') {
                     textoExtraido = textoExtraido.replace(/\D/g, ''); 
                     evaluarBanco(textoExtraido); 
                 }
-
                 if(activeInputId === 'telefono') textoExtraido = textoExtraido.replace(/[^\d\-\s]/g, '');
                 if(activeInputId === 'contacto_cedula') textoExtraido = textoExtraido.replace(/\D/g, ''); 
                 
@@ -431,7 +409,6 @@
                         alert("⚠️ Advertencia: El serial extraído (" + textoExtraido + ") no contiene números. Asegúrate de haber enmarcado correctamente el serial.");
                     }
                 }
-
                 if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
 
                 if (textoExtraido) {
@@ -646,14 +623,12 @@
                 const textoUpper = textoPlano.toUpperCase();
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
-                // === LÓGICA DE EXTRACCIÓN: CÉDULA DE IDENTIDAD ===
                 if (tipoDoc === 'CEDULA') {
                     const textoSinEspacios = textoPlano.replace(/\s+/g, '');
                     const matchCedula = textoSinEspacios.match(/(?:V|E)?[-]?(\d{6,8})/i);
                     if (matchCedula) document.getElementById('contacto_cedula').value = matchCedula[1];
                 }
 
-                // === LÓGICA DE EXTRACCIÓN BANCARIA GLOBAL ===
                 if (tipoDoc === 'BANCO' || tipoDoc === 'CORREO') {
                     const textoSinEspacios = textoPlano.replace(/\s+/g, '');
                     const matchCuenta = textoSinEspacios.match(/(?:01\d{2})\d{16}/);
@@ -665,13 +640,9 @@
 
                 if (tipoDoc === 'CORREO') {
                     const textoSinEspacios = textoPlano.replace(/\s+/g, '');
-                    
-                    let textoCorregido = textoSinEspacios.replace(/(?:\(a\)|[a]|\{a\}|©|®|&)/g, '@');
-                    const matchCorreo = textoCorregido.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+                    const matchCorreo = textoSinEspacios.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
                     if (matchCorreo) {
-                        let partesCorreo = matchCorreo[0].toLowerCase().split('@');
-                        document.getElementById('correo_usuario').value = partesCorreo[0];
-                        document.getElementById('correo_dominio').value = partesCorreo[1];
+                        document.getElementById('correo').value = matchCorreo[0].toLowerCase();
                     }
 
                     const matchTelefono = textoSinEspacios.match(/(?:0414|0424|0412|0416|0426|02\d{2})\d{7}/);
@@ -735,7 +706,7 @@
                             const matchRif = linea.match(regexRifExact);
                             if (matchRif) {
                                 let rifLimpio = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
-                                document.getElementById('rif').value = rifLimpio.length === 10 ? `${rifLimpio.charAt(0)}-${rifLimpio.substring(1,9)}-${rifLimpio.charAt(9)}` : rifLimpio;
+                                document.getElementById('rif').value = rifLimpio; // Estandarizado sin guiones
                                 
                                 let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
                                 if (restoDeLinea.length > 3) {
@@ -853,16 +824,21 @@
         function validarDatos() {
             document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
             
-            const regexRif = /^[JGVE]-?\d{8,9}$/i;
+            // Forzar limpieza del RIF (elimina guiones y espacios)
+            let rifInput = document.getElementById('rif');
+            rifInput.value = rifInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            
+            const regexRif = /^[JGVE]\d{8,9}$/;
             const regexAfiliado = /^(\d{8}|[JGVE]0\d{11,14}|PENDIENTE)$/i;
             const regexCuenta = /^01\d{18}$/;
             const regexTelefono = /^0[1-9]\d{9}$/; 
+            const regexCorreo = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
             
             let errores = [];
             
-            if (!regexRif.test(document.getElementById('rif').value)) {
-                document.getElementById('rif').classList.add('input-error');
-                errores.push("RIF inválido (Ej: J-12345678-9).");
+            if (!regexRif.test(rifInput.value)) {
+                rifInput.classList.add('input-error');
+                errores.push("RIF inválido (Ej: J123456789).");
             }
             if (!regexAfiliado.test(document.getElementById('afiliado').value)) {
                 document.getElementById('afiliado').classList.add('input-error');
@@ -884,11 +860,9 @@
                 errores.push("Teléfono inválido (Debe tener 11 dígitos).");
             }
             
-            const usr = document.getElementById('correo_usuario').value;
-            const dom = document.getElementById('correo_dominio').value;
-            if (!/^[a-zA-Z0-9._%+-]+$/.test(usr) || !/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(dom)) {
-                document.getElementById('correo_usuario').classList.add('input-error');
-                document.getElementById('correo_dominio').classList.add('input-error');
+            const correo = document.getElementById('correo').value.trim();
+            if (!regexCorreo.test(correo)) {
+                document.getElementById('correo').classList.add('input-error');
                 errores.push("Correo electrónico inválido.");
             }
 
@@ -904,13 +878,10 @@
             
             if (!validarDatos()) return;
 
-            // --- AVISO DE CARGA VISUAL ---
             btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos... Por favor espera unos segundos.";
             btnProcesar.style.backgroundColor = "#ffc107";
             btnProcesar.style.color = "#000";
             btnProcesar.disabled = true;
-
-            let correoFinal = document.getElementById('correo_usuario').value.trim() + "@" + document.getElementById('correo_dominio').value.trim();
 
             const filePromises = archivosMemoria.map(a => {
                 return new Promise((resolve, reject) => {
@@ -936,7 +907,7 @@
                 contacto_cedula: document.getElementById('contacto_cedula').value,
                 afiliado: document.getElementById('afiliado').value,
                 telefono: document.getElementById('telefono').value,
-                correo: correoFinal,
+                correo: document.getElementById('correo').value.trim(),
                 serial: document.getElementById('serial').value,
                 actividad: document.getElementById('actividad').value,
                 cuenta: document.getElementById('cuenta').value,
@@ -960,7 +931,7 @@
                     
                     const tipoPersona = (datosParaGuardar.rif.toUpperCase().startsWith('V') || datosParaGuardar.rif.toUpperCase().startsWith('E')) ? 'NATURAL' : 'JURÍDICA';
                     const prefijoRif = datosParaGuardar.rif.charAt(0).toUpperCase();
-                    const numeroRif = datosParaGuardar.rif.substring(2); 
+                    const numeroRif = datosParaGuardar.rif.substring(1); 
                     
                     let textoCrm = "";
                     
@@ -1011,7 +982,6 @@
             } catch (error) {
                 alert("Fallo de conexión. " + error);
             } finally {
-                // Restaurar el botón a su estado normal
                 btnProcesar.innerText = "Verificar y Generar Expediente";
                 btnProcesar.style.backgroundColor = "#0d6efd";
                 btnProcesar.style.color = "white";
