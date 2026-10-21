@@ -132,7 +132,54 @@
                 <textarea id="direccion" rows="2" placeholder="Se extraerá del RIF..."></textarea>
             </div>
 
-            <div class="form-section-title">Datos Bancarios</div>
+            <div class="form-section-title">Datos de la Solicitud (Contacto, Correo, Planilla)</div>
+            
+            <!-- NUEVOS CAMPOS DE CONTACTO -->
+            <div class="form-row" style="margin-bottom:12px;">
+                <div class="form-group" style="flex: 2;">
+                    <label>Contacto / Representante Legal</label>
+                    <input type="text" id="contacto_nombre" placeholder="Nombre completo" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Cédula de Identidad</label>
+                    <input type="text" id="contacto_cedula" placeholder="Ej: V-12345678" required>
+                </div>
+            </div>
+
+            <div class="form-row" style="margin-bottom:12px;">
+                <div class="form-group">
+                    <label>Nº Afiliado</label>
+                    <input type="text" id="afiliado" placeholder="Ej: 73497418 o V0158219618001" required>
+                </div>
+                <div class="form-group">
+                    <label>Serial Asignado</label>
+                    <input type="text" id="serial" placeholder="Ej: NFD300348979 o 62179269">
+                </div>
+            </div>
+            
+            <div class="form-row" style="margin-bottom:12px;">
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" id="telefono" placeholder="Ej: 0414-1234567">
+                </div>
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <div style="display: flex; align-items: center;">
+                        <input type="text" id="correo_usuario" placeholder="usuario" style="flex: 1; text-align: right;" required>
+                        <span class="correo-separador">@</span>
+                        <input type="text" id="correo_dominio" placeholder="dominio.com" style="flex: 1;" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row" style="margin-bottom:12px;">
+                <div class="form-group">
+                    <label>Actividad Comercial</label>
+                    <input type="text" id="actividad" placeholder="Ej: VENTA DE VIVERES">
+                </div>
+            </div>
+
+            <div class="form-section-title">Datos Bancarios y Técnicos</div>
             <div class="form-row" style="margin-bottom:12px;">
                 <div class="form-group" style="flex: 2;">
                     <label>Nº de Cuenta (20 Dígitos)</label>
@@ -164,41 +211,6 @@
                         <option value="BANFANB" data-pref="0177">Banfanb</option>
                         <option value="BNC" data-pref="0191">BNC Nacional de Crédito</option>
                     </select>
-                </div>
-            </div>
-
-            <div class="form-section-title">Datos de la Solicitud (Correo / Planilla)</div>
-            <div class="form-row" style="margin-bottom:12px;">
-                <div class="form-group">
-                    <label>Nº Afiliado</label>
-                    <input type="text" id="afiliado" placeholder="Ej: 73497418 o V0158219618001" required>
-                </div>
-                <div class="form-group">
-                    <label>Serial Asignado</label>
-                    <input type="text" id="serial" placeholder="Ej: NFD300348979 o 62179269">
-                </div>
-            </div>
-            
-            <div class="form-row" style="margin-bottom:12px;">
-                <div class="form-group">
-                    <label>Teléfono</label>
-                    <input type="text" id="telefono" placeholder="Ej: 0414-1234567">
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:12px;">
-                <label>Correo Electrónico</label>
-                <div style="display: flex; align-items: center;">
-                    <input type="text" id="correo_usuario" placeholder="usuario" style="flex: 1; text-align: right;" required>
-                    <span class="correo-separador">@</span>
-                    <input type="text" id="correo_dominio" placeholder="dominio.com" style="flex: 1;" required>
-                </div>
-            </div>
-            
-            <div class="form-row" style="margin-bottom:12px;">
-                <div class="form-group">
-                    <label>Actividad Comercial</label>
-                    <input type="text" id="actividad" placeholder="Ej: VENTA DE VIVERES">
                 </div>
             </div>
 
@@ -237,7 +249,7 @@
 
             <div class="botones-accion">
                 <button type="button" id="btn-limpiar" class="btn-secundario">Limpiar Todo</button>
-                <button type="button" id="btn-procesar" class="btn-principal">Verificar y Generar Expediente</button>
+                <button type="submit" id="btn-procesar" class="btn-principal">Verificar y Generar Expediente</button>
             </div>
         </form>
         <div id="resultado-crm"></div>
@@ -283,11 +295,35 @@
                 }
                 campoObjetivo.innerText = labelText;
                 indicadorRecorte.style.display = 'block';
-                input.classList.remove('input-error'); // Limpia el error visual si lo toca
+                input.classList.remove('input-error');
             });
         });
 
-        // --- BOTÓN LIMPIAR TODO ---
+        // Eventos manuales para activar auto-completado de persona natural
+        document.getElementById('rif').addEventListener('change', autoCompletarContactoNatural);
+        document.getElementById('comercio').addEventListener('change', autoCompletarContactoNatural);
+
+        function autoCompletarContactoNatural() {
+            const rifVal = document.getElementById('rif').value.toUpperCase();
+            const comercioVal = document.getElementById('comercio').value;
+            const inputContactoNombre = document.getElementById('contacto_nombre');
+            const inputContactoCedula = document.getElementById('contacto_cedula');
+
+            if (rifVal && (rifVal.startsWith('V') || rifVal.startsWith('E'))) {
+                if (!inputContactoNombre.value && comercioVal) {
+                    inputContactoNombre.value = comercioVal;
+                }
+                if (!inputContactoCedula.value) {
+                    const parts = rifVal.split('-');
+                    if (parts.length === 3) {
+                        inputContactoCedula.value = parts[0] + '-' + parts[1];
+                    } else {
+                        inputContactoCedula.value = rifVal.slice(0, -2);
+                    }
+                }
+            }
+        }
+
         btnLimpiar.addEventListener('click', () => {
             if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
                 form.reset();
@@ -315,7 +351,7 @@
             canvasContainer.style.transform = `scale(1)`;
         }
 
-        // --- HERRAMIENTA DE RECORTE MÁGICO (MOUSE EVENTS) ---
+        // --- HERRAMIENTA DE RECORTE MÁGICO ---
         canvas.addEventListener('mousedown', (e) => {
             if (!activeInputId) {
                 alert("Primero haz clic en la casilla del formulario (se iluminará en azul) donde quieres guardar el dato.");
@@ -406,7 +442,6 @@
                 if(activeInputId === 'telefono') textoExtraido = textoExtraido.replace(/[^\d\-\s]/g, '');
                 
                 if(activeInputId === 'serial') {
-                    // Limpieza agresiva de la palabra ASIGNADO en el recorte manual
                     textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase().replace(/(ASIGNADO|POSVENTA)/g, '');
                     if(!/\d/.test(textoExtraido) && textoExtraido !== "") {
                         alert("⚠️ Advertencia: El serial extraído (" + textoExtraido + ") no contiene números. Asegúrate de haber enmarcado correctamente el serial.");
@@ -414,6 +449,11 @@
                 }
 
                 if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
+                
+                // Recorte para cedula
+                if(activeInputId === 'contacto_cedula') {
+                    textoExtraido = textoExtraido.replace(/[^A-Z0-9\-]/ig, '').toUpperCase();
+                }
 
                 if (textoExtraido) {
                     const inputTarget = document.getElementById(activeInputId);
@@ -505,6 +545,7 @@
             selectClase.innerHTML = `
                 <option value="">¿Tipo?</option>
                 <option value="RIF">RIF</option>
+                <option value="CEDULA">Cédula de Identidad</option>
                 <option value="CORREO">Correo / Planilla</option>
                 <option value="BANCO">Certificación Bancaria</option>
                 <option value="OTRO">Otro (Solo visual)</option>
@@ -513,7 +554,7 @@
             selectClase.onchange = async function() {
                 if (this.value !== "") {
                     this.classList.remove('pendiente');
-                    if (this.value === 'RIF' || this.value === 'CORREO' || this.value === 'BANCO') {
+                    if (this.value === 'RIF' || this.value === 'CORREO' || this.value === 'BANCO' || this.value === 'CEDULA') {
                         const archivoActual = archivosMemoria.find(a => a.id === id);
                         ejecutarOCRAuto(archivoActual.renderedUrl, this.value);
                     }
@@ -626,6 +667,16 @@
                 const textoUpper = textoPlano.toUpperCase();
                 const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
+                // === LÓGICA DE EXTRACCIÓN: CÉDULA DE IDENTIDAD ===
+                if (tipoDoc === 'CEDULA') {
+                    // Buscar número de cédula (Ej: V- 12.345.678)
+                    const matchCedula = textoUpper.match(/[VE]\s*[-.]?\s*\d{1,2}\.?\d{3}\.?\d{3}/);
+                    if (matchCedula) {
+                        document.getElementById('contacto_cedula').value = matchCedula[0].replace(/\s/g, '').replace(/\./g, '');
+                    }
+                    // El nombre en la cédula tiene fondos muy complejos, es mejor usar Recorte Mágico si es necesario.
+                }
+
                 if (tipoDoc === 'BANCO' || tipoDoc === 'CORREO') {
                     const textoSinEspacios = textoPlano.replace(/\s+/g, '');
                     const matchCuenta = textoSinEspacios.match(/(?:01\d{2})\d{16}/);
@@ -649,7 +700,6 @@
                     const matchTelefono = textoSinEspacios.match(/(?:0414|0424|0412|0416|0426|02\d{2})\d{7}/);
                     if (matchTelefono) document.getElementById('telefono').value = matchTelefono[0];
 
-                    // PREVENCIÓN DE PALABRA "ASIGNADO" COMO SERIAL
                     let textoParaSerial = textoUpper.replace(/(ASIGNADO|POSVENTA|PUNTO)/g, '');
                     const matchSerial = textoParaSerial.match(/(?:SERIAL|S\/N|SN)[\s\S]{0,35}?([A-Z0-9]{8,15})/);
                     if (matchSerial && /\d/.test(matchSerial[1])) {
@@ -800,10 +850,16 @@
                         if (firmasUnicas.length > 1) {
                             inputComercio.value = "";
                             inputComercio.placeholder = "👇 Haz clic aquí para elegir la firma...";
+                            inputComercio.style.border = "2px solid #0d6efd"; 
                         } else {
                             inputComercio.value = firmasUnicas[0];
+                            inputComercio.placeholder = "Se extraerá del RIF...";
+                            inputComercio.style.border = "1px solid #ccc";
                         }
                     }
+                    
+                    // Disparar Auto-completado de Persona Natural al terminar OCR del RIF
+                    autoCompletarContactoNatural();
                 }
 
             } catch (error) {
@@ -816,13 +872,12 @@
 
         // --- SISTEMA DE VALIDACIÓN PREVIA Y ENVÍO ---
         function validarDatos() {
-            // Limpiar errores visuales previos
             document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
             
             const regexRif = /^[JGVE]-?\d{8,9}$/i;
             const regexAfiliado = /^(\d{8}|[JGVE]0\d{11,14}|PENDIENTE)$/i;
             const regexCuenta = /^01\d{18}$/;
-            const regexTelefono = /^0[1-9]\d{9}$/; // Valida 11 dígitos empezando en 0
+            const regexTelefono = /^0[1-9]\d{9}$/; 
             
             let errores = [];
             
@@ -857,6 +912,12 @@
                 document.getElementById('correo_dominio').classList.add('input-error');
                 errores.push("Correo electrónico inválido.");
             }
+            
+            const cedulaContacto = document.getElementById('contacto_cedula').value;
+            if (cedulaContacto === "" || !/^[VE]-?\d{6,8}$/i.test(cedulaContacto)) {
+                document.getElementById('contacto_cedula').classList.add('input-error');
+                errores.push("Cédula de Contacto inválida (Ej: V-12345678).");
+            }
 
             if (errores.length > 0) {
                 alert("⚠️ Se encontraron errores en los datos:\n\n- " + errores.join("\n- ") + "\n\nPor favor, corrige las casillas rojas antes de guardar.");
@@ -868,7 +929,6 @@
         btnProcesar.addEventListener('click', async (e) => {
             e.preventDefault();
             
-            // Validar antes de procesar
             if (!validarDatos()) return;
 
             btnProcesar.innerText = "Registrando y Subiendo a Drive...";
@@ -906,6 +966,8 @@
                 modelo: document.getElementById('modelo').value,
                 comunicacion: document.getElementById('comunicacion').value,
                 operadora: document.getElementById('operadora').value,
+                contacto_nombre: document.getElementById('contacto_nombre').value,
+                contacto_cedula: document.getElementById('contacto_cedula').value,
                 archivos: archivosBase64
             };
 
@@ -933,6 +995,7 @@
                                    `Correo: ${datosParaGuardar.correo}\n` +
                                    `Nombres y Apellidos / Firma: ${datosParaGuardar.comercio}\n` +
                                    `Teléfono: ${datosParaGuardar.telefono}\n` +
+                                   `Contacto: ${datosParaGuardar.contacto_nombre} | C.I: ${datosParaGuardar.contacto_cedula}\n` +
                                    `Contribuyente Especial: ${datosParaGuardar.contribuyente}\n` +
                                    `Actividad Comercial: ${datosParaGuardar.actividad}\n` +
                                    `-----------------------------------------\n` +
@@ -945,6 +1008,7 @@
                                    `Razón Comercial: ${datosParaGuardar.comercio}\n` +
                                    `Correo: ${datosParaGuardar.correo}\n` +
                                    `Teléfono: ${datosParaGuardar.telefono}\n` +
+                                   `Representante Legal: ${datosParaGuardar.contacto_nombre} | C.I: ${datosParaGuardar.contacto_cedula}\n` +
                                    `Contribuyente Especial: ${datosParaGuardar.contribuyente}\n` +
                                    `Actividad Comercial: ${datosParaGuardar.actividad}\n` +
                                    `------------------------------------------\n` +
@@ -955,6 +1019,8 @@
                     resultadoCrm.innerHTML = textoCrm + `<br><br>(Copia este texto para tu CRM)<br><br><a id="enlace-drive" href="${resultado.folderUrl}" target="_blank">📁 Abrir Expediente en Google Drive</a>`;
                     
                     form.reset();
+                    document.getElementById('comercio').style.border = "1px solid #ccc";
+                    
                     archivosMemoria.forEach(a => URL.revokeObjectURL(a.url));
                     archivosMemoria = [];
                     galeria.innerHTML = '';
