@@ -110,7 +110,7 @@
         <form id="param-form">
             <div class="form-section-title">Datos del RIF</div>
             <div class="form-group" style="margin-bottom:12px;">
-                <label>Nombre del Comercio / Firma Personal</label>
+                <label>Nombre del Comercio / Razón Social</label>
                 <input type="text" id="comercio" list="lista-firmas" placeholder="Se extraerá del RIF..." required>
                 <datalist id="lista-firmas"></datalist>
             </div>
@@ -132,17 +132,16 @@
                 <textarea id="direccion" rows="2" placeholder="Se extraerá del RIF..."></textarea>
             </div>
 
-            <div class="form-section-title">Datos de la Solicitud (Contacto, Correo, Planilla)</div>
+            <div class="form-section-title">Datos de la Solicitud (Correo / Planilla / Cédula)</div>
             
-            <!-- NUEVOS CAMPOS DE CONTACTO -->
             <div class="form-row" style="margin-bottom:12px;">
                 <div class="form-group" style="flex: 2;">
-                    <label>Contacto / Representante Legal</label>
-                    <input type="text" id="contacto_nombre" placeholder="Nombre completo" required>
+                    <label>Persona de Contacto / Representante</label>
+                    <input type="text" id="contacto_nombre" placeholder="Nombre de quien gestiona" required>
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <label>Cédula de Identidad</label>
-                    <input type="text" id="contacto_cedula" placeholder="Ej: V-12345678" required>
+                    <label>Cédula de Contacto</label>
+                    <input type="text" id="contacto_cedula" placeholder="Ej: 12345678" required>
                 </div>
             </div>
 
@@ -283,6 +282,14 @@
         let startX, startY;
         let activeInputId = null;
 
+        // --- EVENTO PARA AUTO-RELLENAR CONTACTO DE PERSONA NATURAL ---
+        document.getElementById('comercio').addEventListener('input', (e) => {
+            const valRif = document.getElementById('rif').value.toUpperCase();
+            if (valRif.startsWith('V') || valRif.startsWith('E')) {
+                document.getElementById('contacto_nombre').value = e.target.value;
+            }
+        });
+
         // --- RASTREO DEL CAMPO ACTIVO PARA RECORTE MÁGICO ---
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(input => {
             input.addEventListener('focus', (e) => {
@@ -299,31 +306,7 @@
             });
         });
 
-        // Eventos manuales para activar auto-completado de persona natural
-        document.getElementById('rif').addEventListener('change', autoCompletarContactoNatural);
-        document.getElementById('comercio').addEventListener('change', autoCompletarContactoNatural);
-
-        function autoCompletarContactoNatural() {
-            const rifVal = document.getElementById('rif').value.toUpperCase();
-            const comercioVal = document.getElementById('comercio').value;
-            const inputContactoNombre = document.getElementById('contacto_nombre');
-            const inputContactoCedula = document.getElementById('contacto_cedula');
-
-            if (rifVal && (rifVal.startsWith('V') || rifVal.startsWith('E'))) {
-                if (!inputContactoNombre.value && comercioVal) {
-                    inputContactoNombre.value = comercioVal;
-                }
-                if (!inputContactoCedula.value) {
-                    const parts = rifVal.split('-');
-                    if (parts.length === 3) {
-                        inputContactoCedula.value = parts[0] + '-' + parts[1];
-                    } else {
-                        inputContactoCedula.value = rifVal.slice(0, -2);
-                    }
-                }
-            }
-        }
-
+        // --- BOTÓN LIMPIAR TODO ---
         btnLimpiar.addEventListener('click', () => {
             if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
                 form.reset();
@@ -440,6 +423,7 @@
                 }
 
                 if(activeInputId === 'telefono') textoExtraido = textoExtraido.replace(/[^\d\-\s]/g, '');
+                if(activeInputId === 'contacto_cedula') textoExtraido = textoExtraido.replace(/\D/g, ''); 
                 
                 if(activeInputId === 'serial') {
                     textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase().replace(/(ASIGNADO|POSVENTA)/g, '');
@@ -449,11 +433,6 @@
                 }
 
                 if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
-                
-                // Recorte para cedula
-                if(activeInputId === 'contacto_cedula') {
-                    textoExtraido = textoExtraido.replace(/[^A-Z0-9\-]/ig, '').toUpperCase();
-                }
 
                 if (textoExtraido) {
                     const inputTarget = document.getElementById(activeInputId);
@@ -545,10 +524,10 @@
             selectClase.innerHTML = `
                 <option value="">¿Tipo?</option>
                 <option value="RIF">RIF</option>
-                <option value="CEDULA">Cédula de Identidad</option>
                 <option value="CORREO">Correo / Planilla</option>
-                <option value="BANCO">Certificación Bancaria</option>
-                <option value="OTRO">Otro (Solo visual)</option>
+                <option value="BANCO">Cert. Bancaria</option>
+                <option value="CEDULA">Cédula Identidad</option>
+                <option value="OTRO">Otro (Visual)</option>
             `;
             
             selectClase.onchange = async function() {
@@ -669,14 +648,12 @@
                 
                 // === LÓGICA DE EXTRACCIÓN: CÉDULA DE IDENTIDAD ===
                 if (tipoDoc === 'CEDULA') {
-                    // Buscar número de cédula (Ej: V- 12.345.678)
-                    const matchCedula = textoUpper.match(/[VE]\s*[-.]?\s*\d{1,2}\.?\d{3}\.?\d{3}/);
-                    if (matchCedula) {
-                        document.getElementById('contacto_cedula').value = matchCedula[0].replace(/\s/g, '').replace(/\./g, '');
-                    }
-                    // El nombre en la cédula tiene fondos muy complejos, es mejor usar Recorte Mágico si es necesario.
+                    const textoSinEspacios = textoPlano.replace(/\s+/g, '');
+                    const matchCedula = textoSinEspacios.match(/(?:V|E)?[-]?(\d{6,8})/i);
+                    if (matchCedula) document.getElementById('contacto_cedula').value = matchCedula[1];
                 }
 
+                // === LÓGICA DE EXTRACCIÓN BANCARIA GLOBAL ===
                 if (tipoDoc === 'BANCO' || tipoDoc === 'CORREO') {
                     const textoSinEspacios = textoPlano.replace(/\s+/g, '');
                     const matchCuenta = textoSinEspacios.match(/(?:01\d{2})\d{16}/);
@@ -850,16 +827,18 @@
                         if (firmasUnicas.length > 1) {
                             inputComercio.value = "";
                             inputComercio.placeholder = "👇 Haz clic aquí para elegir la firma...";
-                            inputComercio.style.border = "2px solid #0d6efd"; 
                         } else {
                             inputComercio.value = firmasUnicas[0];
-                            inputComercio.placeholder = "Se extraerá del RIF...";
-                            inputComercio.style.border = "1px solid #ccc";
                         }
                     }
-                    
-                    // Disparar Auto-completado de Persona Natural al terminar OCR del RIF
-                    autoCompletarContactoNatural();
+
+                    // --- AUTO-RELLENADO PARA PERSONA NATURAL ---
+                    const valRif = document.getElementById('rif').value.toUpperCase();
+                    if (valRif.startsWith('V') || valRif.startsWith('E')) {
+                        document.getElementById('contacto_cedula').value = valRif.replace(/\D/g, '');
+                        const valComercio = document.getElementById('comercio').value;
+                        if (valComercio) document.getElementById('contacto_nombre').value = valComercio;
+                    }
                 }
 
             } catch (error) {
@@ -893,7 +872,7 @@
             const valSerial = document.getElementById('serial').value;
             if (valSerial !== "" && (!/^[A-Z0-9]{8,15}$/i.test(valSerial) || !/\d/.test(valSerial))) {
                 document.getElementById('serial').classList.add('input-error');
-                errores.push("Serial inválido (Debe tener entre 8 y 15 caracteres y contener al menos un número).");
+                errores.push("Serial inválido (Debe contener entre 8 y 15 caracteres y al menos un número).");
             }
 
             if (!regexCuenta.test(document.getElementById('cuenta').value)) {
@@ -912,15 +891,9 @@
                 document.getElementById('correo_dominio').classList.add('input-error');
                 errores.push("Correo electrónico inválido.");
             }
-            
-            const cedulaContacto = document.getElementById('contacto_cedula').value;
-            if (cedulaContacto === "" || !/^[VE]-?\d{6,8}$/i.test(cedulaContacto)) {
-                document.getElementById('contacto_cedula').classList.add('input-error');
-                errores.push("Cédula de Contacto inválida (Ej: V-12345678).");
-            }
 
             if (errores.length > 0) {
-                alert("⚠️ Se encontraron errores en los datos:\n\n- " + errores.join("\n- ") + "\n\nPor favor, corrige las casillas rojas antes de guardar.");
+                alert("⚠️ Se encontraron errores en los datos:\n\n- " + errores.join("\n- ") + "\n\nPor favor, corrige las casillas rojas antes de generar el expediente.");
                 return false;
             }
             return true;
@@ -931,7 +904,10 @@
             
             if (!validarDatos()) return;
 
-            btnProcesar.innerText = "Registrando y Subiendo a Drive...";
+            // --- AVISO DE CARGA VISUAL ---
+            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos... Por favor espera unos segundos.";
+            btnProcesar.style.backgroundColor = "#ffc107";
+            btnProcesar.style.color = "#000";
             btnProcesar.disabled = true;
 
             let correoFinal = document.getElementById('correo_usuario').value.trim() + "@" + document.getElementById('correo_dominio').value.trim();
@@ -956,6 +932,8 @@
                 direccion: document.getElementById('direccion').value,
                 rif: document.getElementById('rif').value,
                 contribuyente: document.getElementById('contribuyente').value,
+                contacto_nombre: document.getElementById('contacto_nombre').value,
+                contacto_cedula: document.getElementById('contacto_cedula').value,
                 afiliado: document.getElementById('afiliado').value,
                 telefono: document.getElementById('telefono').value,
                 correo: correoFinal,
@@ -966,8 +944,6 @@
                 modelo: document.getElementById('modelo').value,
                 comunicacion: document.getElementById('comunicacion').value,
                 operadora: document.getElementById('operadora').value,
-                contacto_nombre: document.getElementById('contacto_nombre').value,
-                contacto_cedula: document.getElementById('contacto_cedula').value,
                 archivos: archivosBase64
             };
 
@@ -992,10 +968,10 @@
                         textoCrm = `--- INFORMACIÓN DE COMERCIO (NATURAL) ---\n` +
                                    `Tipo Persona: Natural\n` +
                                    `Tipo: ${prefijoRif} | Nro. Documento RIF: ${numeroRif}\n` +
+                                   `Cédula de Contacto: ${datosParaGuardar.contacto_cedula}\n` +
                                    `Correo: ${datosParaGuardar.correo}\n` +
                                    `Nombres y Apellidos / Firma: ${datosParaGuardar.comercio}\n` +
                                    `Teléfono: ${datosParaGuardar.telefono}\n` +
-                                   `Contacto: ${datosParaGuardar.contacto_nombre} | C.I: ${datosParaGuardar.contacto_cedula}\n` +
                                    `Contribuyente Especial: ${datosParaGuardar.contribuyente}\n` +
                                    `Actividad Comercial: ${datosParaGuardar.actividad}\n` +
                                    `-----------------------------------------\n` +
@@ -1006,9 +982,9 @@
                                    `Tipo: ${prefijoRif} | Nro. Documento RIF: ${numeroRif}\n` +
                                    `Razón Social: ${datosParaGuardar.comercio}\n` +
                                    `Razón Comercial: ${datosParaGuardar.comercio}\n` +
+                                   `Representante / Contacto: ${datosParaGuardar.contacto_nombre} (C.I: ${datosParaGuardar.contacto_cedula})\n` +
                                    `Correo: ${datosParaGuardar.correo}\n` +
                                    `Teléfono: ${datosParaGuardar.telefono}\n` +
-                                   `Representante Legal: ${datosParaGuardar.contacto_nombre} | C.I: ${datosParaGuardar.contacto_cedula}\n` +
                                    `Contribuyente Especial: ${datosParaGuardar.contribuyente}\n` +
                                    `Actividad Comercial: ${datosParaGuardar.actividad}\n` +
                                    `------------------------------------------\n` +
@@ -1035,7 +1011,10 @@
             } catch (error) {
                 alert("Fallo de conexión. " + error);
             } finally {
+                // Restaurar el botón a su estado normal
                 btnProcesar.innerText = "Verificar y Generar Expediente";
+                btnProcesar.style.backgroundColor = "#0d6efd";
+                btnProcesar.style.color = "white";
                 btnProcesar.disabled = false;
             }
         });
