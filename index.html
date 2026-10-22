@@ -32,29 +32,38 @@
         .vista { display: none; width: 100%; height: 100%; }
         .vista.active { display: flex; }
 
-        /* --- VISTA DE CARGA (DIVIDIDA) --- */
+        /* --- VISTA DE CARGA --- */
         .visor { flex: 1; border-right: 2px solid #ccc; display: flex; flex-direction: column; background: #e9ecef; position: relative; overflow: hidden;}
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         
         .toolbar { background: #dee2e6; padding: 10px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #ccc; z-index: 20;}
         .btn-agregar { background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
         .btn-agregar:hover { background: #157347; }
+        .toolbar-info { font-size: 0.85rem; color: #495057; }
+
         #drop-zone-overlay { flex: 1; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 1.1rem; text-align: center; padding: 20px;}
+        #drop-zone-overlay.dragover { background: #dee2e6; border: 3px dashed #495057; }
+        
         #preview-container { flex: 1; display: none; padding: 0; flex-direction: column; height: 100%; position: relative;}
         
         .zoom-controls { display: flex; justify-content: center; align-items: center; gap: 10px; background: #dee2e6; padding: 8px; border-bottom: 1px solid #ccc; z-index: 20;}
-        .btn-zoom { background: #6c757d; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .btn-zoom { background: #6c757d; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s;}
         .btn-zoom:hover { background: #5a6268; }
         
-        /* ESCALADO Y DESPLAZAMIENTO REPARADO */
+        /* ESCALADO CON BARRAS DE DESPLAZAMIENTO NATIVAS */
         .preview-wrapper { flex: 1; overflow: auto; padding: 20px; background: #d7dadd; position: relative;}
         #canvas-container { margin: 0 auto; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: #fff; display: none;}
-        #preview-canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+        #preview-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
         #selection-box { position: absolute; border: 2px dashed #0d6efd; background: rgba(13, 110, 253, 0.2); pointer-events: none; display: none; z-index: 10;}
         
         #ocr-loading { display: none; position: absolute; top: 70px; right: 10px; background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 30;}
         
-        .galeria { height: 95px; display: flex; gap: 15px; padding: 15px 5px 5px 5px; overflow-x: auto; border-top: 1px solid #ccc; background: #f8f9fa; z-index: 20;}
+        /* CINTILLO RESIZABLE */
+        #galeria-resizer { height: 8px; background: #ced4da; cursor: ns-resize; display: flex; justify-content: center; align-items: center; border-top: 1px solid #adb5bd; z-index: 25; transition: background 0.2s;}
+        #galeria-resizer:hover { background: #adb5bd; }
+        #galeria-resizer::after { content: ':::'; color: #6c757d; font-size: 10px; letter-spacing: 2px; }
+        
+        .galeria { height: 110px; min-height: 60px; max-height: 60vh; display: flex; gap: 15px; padding: 15px 5px 5px 5px; overflow-x: auto; overflow-y: hidden; background: #f8f9fa; z-index: 20;}
         .galeria-item { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 80px;}
         .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff; transition: 0.2s;}
         .thumb.active { border-color: #0d6efd; transform: scale(1.05);}
@@ -62,8 +71,7 @@
         .doc-tipo { font-size: 0.7rem; padding: 2px; border-radius: 3px; border: 1px solid #0d6efd; width: 100%; text-align: center; margin-top: 5px;}
         .btn-eliminar { position: absolute; top: -8px; right: 2px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer;}
         
-        #indicador-recorte { background: #cfe2ff; color: #084298; border: 1px solid #b6d4fe; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.85rem; font-weight: bold; text-align: center; display: none; align-items: center; justify-content: space-between;}
-        .btn-cancelar-recorte { background: #084298; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8rem;}
+        #indicador-recorte { background: #cfe2ff; color: #084298; border: 1px solid #b6d4fe; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.85rem; font-weight: bold; text-align: center; display: none;}
         
         .form-section-title { font-size: 0.95rem; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; margin-top: 10px; font-weight: bold;}
         .form-group { margin-bottom: 12px; }
@@ -77,6 +85,7 @@
         .btn-principal { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 2; font-weight: bold;}
         .btn-secundario { background-color: #dc3545; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 1; font-weight: bold;}
         #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;}
+        #enlace-drive { margin-top: 10px; display: block; color: #0dcaf0; font-weight: bold; text-decoration: underline;}
 
         /* --- VISTA DE CONSULTA (TABLA) --- */
         #vista-consulta { flex-direction: column; padding: 20px; background: #f8f9fa; overflow-y: auto;}
@@ -140,7 +149,6 @@
                         <button class="btn-zoom" onclick="cambiarZoom(-0.2)">➖ Alejar</button>
                         <button class="btn-zoom" onclick="cambiarZoom(0.2)">➕ Acercar</button>
                         <button class="btn-zoom" onclick="resetZoom()" style="background:#0d6efd;">Ajustar a pantalla</button>
-                        <span style="font-size: 0.8rem; margin-left: 10px; color:#495057;">💡 <i>Arrastra el documento para moverlo</i></span>
                     </div>
 
                     <div class="preview-wrapper" id="preview-wrapper">
@@ -150,6 +158,9 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- DIVISOR AJUSTABLE PARA EL CINTILLO -->
+                <div id="galeria-resizer" title="Haz clic y arrastra para ajustar el tamaño del panel"></div>
                 <div class="galeria" id="galeria"></div>
             </div>
 
@@ -157,8 +168,7 @@
                 <h2 style="margin-top: 0; font-size: 1.4rem; margin-bottom: 5px;">Instalaciones - Registro</h2>
                 
                 <div id="indicador-recorte">
-                    <span>🎯 <b>Recorte Mágico:</b> Enmarca el texto para la casilla <span id="campo-objetivo" style="text-decoration:underline; text-transform:uppercase;"></span></span>
-                    <button type="button" class="btn-cancelar-recorte" onclick="cancelarSeleccion()">Cancelar Selección</button>
+                    <span>🎯 <b>Recorte Mágico:</b> Enmarca el texto en el documento para rellenar la casilla <span id="campo-objetivo" style="text-decoration:underline; text-transform:uppercase;"></span></span>
                 </div>
 
                 <form id="param-form">
@@ -373,8 +383,7 @@
             e.preventDefault();
             const btn = document.getElementById('btn-login');
             const errorDiv = document.getElementById('login-error');
-            btn.innerText = "Verificando...";
-            btn.disabled = true;
+            btn.innerText = "Verificando..."; btn.disabled = true;
 
             const payload = {
                 accion: "login",
@@ -386,22 +395,18 @@
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if(data.status === "exito") {
-                    SESSION.usuario = data.usuario;
-                    SESSION.rol = data.rol;
+                    SESSION.usuario = data.usuario; SESSION.rol = data.rol;
                     document.getElementById('user-display').innerText = `👤 ${data.usuario} (${data.rol})`;
                     document.getElementById('login-screen').style.display = "none";
                     document.getElementById('navbar').style.display = "flex";
                     document.getElementById('app-container').style.display = "flex";
                 } else {
-                    errorDiv.innerText = "Usuario o contraseña incorrectos.";
-                    errorDiv.style.display = "block";
+                    errorDiv.innerText = "Usuario o contraseña incorrectos."; errorDiv.style.display = "block";
                 }
             } catch(e) {
-                errorDiv.innerText = "Error de conexión con el servidor.";
-                errorDiv.style.display = "block";
+                errorDiv.innerText = "Error de conexión con el servidor."; errorDiv.style.display = "block";
             }
-            btn.innerText = "Ingresar";
-            btn.disabled = false;
+            btn.innerText = "Ingresar"; btn.disabled = false;
         });
 
         function cerrarSesion() {
@@ -416,7 +421,6 @@
         function cambiarVista(vista) {
             document.querySelectorAll('.vista').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-menu button').forEach(b => b.classList.remove('active'));
-            
             document.getElementById(`vista-${vista}`).classList.add('active');
             document.getElementById(`nav-${vista}`).classList.add('active');
         }
@@ -427,11 +431,9 @@
         async function cargarSolicitudes() {
             const tbody = document.getElementById('tbody-solicitudes');
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Cargando información... ⏳</td></tr>';
-            
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ accion: "leer", usuario_actual: SESSION.usuario, rol: SESSION.rol })
+                    method: 'POST', body: JSON.stringify({ accion: "leer", usuario_actual: SESSION.usuario, rol: SESSION.rol })
                 });
                 const data = await response.json();
                 
@@ -441,19 +443,14 @@
                         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No hay solicitudes registradas.</td></tr>';
                         return;
                     }
-                    
                     data.datos.reverse().forEach(reg => {
                         const esPendiente = (reg.afiliado.toUpperCase() === "PENDIENTE") ? "fila-pendiente" : "";
                         const tr = document.createElement('tr');
                         tr.className = esPendiente;
                         tr.innerHTML = `
-                            <td>${reg.fecha.split(' ')[0]}</td>
-                            <td>${reg.usuario}</td>
-                            <td>${reg.comercio}</td>
-                            <td>${reg.rif}</td>
-                            <td style="font-weight:bold;">${reg.afiliado}</td>
-                            <td>${reg.serial}</td>
-                            <td>${reg.banco}</td>
+                            <td>${reg.fecha.split(' ')[0]}</td><td>${reg.usuario}</td><td>${reg.comercio}</td>
+                            <td>${reg.rif}</td><td style="font-weight:bold;">${reg.afiliado}</td>
+                            <td>${reg.serial}</td><td>${reg.banco}</td>
                             <td>
                                 <button class="btn-tabla btn-editar" onclick="abrirEdicion('${reg.id}', '${reg.comercio}', '${reg.rif}', '${reg.afiliado}', '${reg.serial}')">✏️ Editar</button>
                                 <button class="btn-tabla btn-eliminar-registro" onclick="eliminarRegistro('${reg.id}')">🗑️ Borrar</button>
@@ -462,62 +459,45 @@
                         tbody.appendChild(tr);
                     });
                 }
-            } catch(e) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Error de conexión. Intenta de nuevo.</td></tr>';
-            }
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Error de conexión. Intenta de nuevo.</td></tr>'; }
         }
 
         async function eliminarRegistro(idUnico) {
             if(!confirm("¿Estás seguro de que deseas ELIMINAR definitivamente esta solicitud? Esta acción no se puede deshacer.")) return;
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ accion: "eliminar", id_registro: idUnico })
-                });
+                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ accion: "eliminar", id_registro: idUnico }) });
                 const data = await response.json();
-                if(data.status === "exito") {
-                    alert("Registro eliminado exitosamente.");
-                    cargarSolicitudes(); 
-                } else { alert("Error: " + data.mensaje); }
+                if(data.status === "exito") { alert("Registro eliminado exitosamente."); cargarSolicitudes(); } 
+                else { alert("Error: " + data.mensaje); }
             } catch(e) { alert("Fallo de conexión."); }
         }
 
         function abrirEdicion(id, comercio, rif, afiliado, serial) {
-            document.getElementById('edit_id').value = id;
-            document.getElementById('edit_comercio').value = comercio;
-            document.getElementById('edit_rif').value = rif;
-            document.getElementById('edit_afiliado').value = afiliado;
+            document.getElementById('edit_id').value = id; document.getElementById('edit_comercio').value = comercio;
+            document.getElementById('edit_rif').value = rif; document.getElementById('edit_afiliado').value = afiliado;
             document.getElementById('edit_serial').value = serial !== 'undefined' ? serial : '';
             document.getElementById('modal-edicion').style.display = 'flex';
         }
 
         document.getElementById('form-edicion').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('btn-guardar-edicion');
-            btn.innerText = "Guardando..."; btn.disabled = true;
-
+            const btn = document.getElementById('btn-guardar-edicion'); btn.innerText = "Guardando..."; btn.disabled = true;
             const payload = {
-                accion: "actualizar",
-                id_registro: document.getElementById('edit_id').value,
-                comercio: document.getElementById('edit_comercio').value,
-                rif: document.getElementById('edit_rif').value,
-                afiliado: document.getElementById('edit_afiliado').value,
-                serial: document.getElementById('edit_serial').value
+                accion: "actualizar", id_registro: document.getElementById('edit_id').value,
+                comercio: document.getElementById('edit_comercio').value, rif: document.getElementById('edit_rif').value,
+                afiliado: document.getElementById('edit_afiliado').value, serial: document.getElementById('edit_serial').value
             };
-
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
-                if(data.status === "exito") {
-                    document.getElementById('modal-edicion').style.display = 'none';
-                    cargarSolicitudes(); 
-                } else { alert("Error al actualizar."); }
+                if(data.status === "exito") { document.getElementById('modal-edicion').style.display = 'none'; cargarSolicitudes(); } 
+                else { alert("Error al actualizar."); }
             } catch(err) { alert("Error de conexión."); }
             btn.innerText = "Guardar Cambios"; btn.disabled = false;
         });
 
         // ==========================================
-        // VISTA DE CARGA (OCR, LÓGICA DE CANVAS Y ZOOM)
+        // VISTA DE CARGA (ESCALADO FISICO, RESIZER Y OCR)
         // ==========================================
         const zonaArrastre = document.getElementById('zona-arrastre');
         const overlay = document.getElementById('drop-zone-overlay');
@@ -529,9 +509,13 @@
         const canvas = document.getElementById('preview-canvas');
         const ctx = canvas.getContext('2d');
         const selectionBox = document.getElementById('selection-box');
+        const galeriaResizer = document.getElementById('galeria-resizer');
+        const galeriaPanel = document.getElementById('galeria');
         
         const galeria = document.getElementById('galeria');
         const form = document.getElementById('param-form');
+        const btnLimpiar = document.getElementById('btn-limpiar');
+        const resultadoCrm = document.getElementById('resultado-crm');
         const btnProcesar = document.getElementById('btn-procesar');
         const ocrLoading = document.getElementById('ocr-loading');
         const indicadorRecorte = document.getElementById('indicador-recorte');
@@ -542,11 +526,34 @@
         let baseCanvasHeight = 0;
         let zoomActual = 1;
         let isDrawing = false;
-        let isPanning = false;
-        let startX, startY, panStartX, panStartY, scrollLeftStart, scrollTopStart;
+        let isResizing = false;
+        let startX, startY;
         let activeInputId = null;
 
-        // --- RASTREO Y CANCELACIÓN DEL CAMPO ACTIVO ---
+        // --- RESIZER DEL CINTILLO ---
+        galeriaResizer.addEventListener('mousedown', () => {
+            isResizing = true;
+            document.body.style.cursor = 'ns-resize';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const containerRect = zonaArrastre.getBoundingClientRect();
+            // Calcular nueva altura desde el fondo del contenedor general
+            let newHeight = containerRect.bottom - e.clientY;
+            if (newHeight < 60) newHeight = 60;
+            if (newHeight > containerRect.height - 150) newHeight = containerRect.height - 150;
+            galeriaPanel.style.height = newHeight + 'px';
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = 'default';
+            }
+        });
+
+        // --- RASTREO DEL CAMPO ACTIVO PARA RECORTE MÁGICO ---
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(input => {
             input.addEventListener('focus', (e) => {
                 activeInputId = e.target.id;
@@ -558,18 +565,29 @@
                 }
                 campoObjetivo.innerText = labelText;
                 indicadorRecorte.style.display = 'flex';
-                canvas.style.cursor = 'crosshair';
                 input.classList.remove('input-error'); 
             });
         });
 
-        function cancelarSeleccion() {
-            activeInputId = null;
-            indicadorRecorte.style.display = 'none';
-            canvas.style.cursor = 'grab';
-        }
+        // --- BOTÓN LIMPIAR TODO ---
+        btnLimpiar.addEventListener('click', () => {
+            if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
+                form.reset();
+                document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+                archivosMemoria.forEach(a => URL.revokeObjectURL(a.url));
+                archivosMemoria = [];
+                galeria.innerHTML = '';
+                previewContainer.style.display = 'none';
+                overlay.style.display = 'flex';
+                canvasContainer.style.display = 'none';
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                indicadorRecorte.style.display = 'none';
+                resultadoCrm.style.display = 'none';
+                activeInputId = null;
+            }
+        });
 
-        // --- SISTEMA DE ZOOM REPARADO (SIN TRANSFORM SCALE) ---
+        // --- CONTROLES DE ZOOM CON DIMENSIONES REALES ---
         function aplicarZoom() {
             if (baseCanvasWidth === 0) return;
             canvasContainer.style.width = (baseCanvasWidth * zoomActual) + 'px';
@@ -582,69 +600,62 @@
             if (zoomActual > 5) zoomActual = 5;
             aplicarZoom();
         }
-        
+
         function resetZoom() {
-            const wrapWidth = previewWrapper.clientWidth - 40;
+            // Ajustar el zoom al tamaño del contenedor de previsualización
+            const wrapWidth = previewWrapper.clientWidth - 40; // restando el padding
             const fitZoom = wrapWidth / baseCanvasWidth;
             zoomActual = fitZoom < 1 ? fitZoom : 1;
             aplicarZoom();
         }
 
-        // --- RATÓN: RECORTE Y ARRASTRE DE LIENZO ---
+        // --- HERRAMIENTA DE RECORTE MÁGICO DIRECTO ---
         canvasContainer.addEventListener('mousedown', (e) => {
-            // Arrastrar si NO hay campo activo o se usa botón central/shift
-            if (!activeInputId || e.button === 1 || e.shiftKey) {
-                e.preventDefault();
-                isPanning = true;
-                canvas.style.cursor = 'grabbing';
-                panStartX = e.clientX;
-                panStartY = e.clientY;
-                scrollLeftStart = previewWrapper.scrollLeft;
-                scrollTopStart = previewWrapper.scrollTop;
+            if (!activeInputId) {
+                alert("Primero haz clic en la casilla del formulario (se iluminará en azul) donde quieres guardar el dato.");
                 return;
             }
-            
-            // Recorte Mágico
             isDrawing = true;
-            startX = e.offsetX; startY = e.offsetY;
-            selectionBox.style.left = startX + 'px'; selectionBox.style.top = startY + 'px';
-            selectionBox.style.width = '0px'; selectionBox.style.height = '0px'; 
+            startX = e.offsetX;
+            startY = e.offsetY;
+            selectionBox.style.left = startX + 'px';
+            selectionBox.style.top = startY + 'px';
+            selectionBox.style.width = '0px';
+            selectionBox.style.height = '0px';
             selectionBox.style.display = 'block';
         });
 
         window.addEventListener('mousemove', (e) => {
-            if (isPanning) {
-                const dx = e.clientX - panStartX;
-                const dy = e.clientY - panStartY;
-                previewWrapper.scrollLeft = scrollLeftStart - dx;
-                previewWrapper.scrollTop = scrollTopStart - dy;
-                return;
-            }
             if (!isDrawing) return;
-            const currentX = e.offsetX; const currentY = e.offsetY;
-            const width = currentX - startX; const height = currentY - startY;
-            selectionBox.style.width = Math.abs(width) + 'px'; selectionBox.style.height = Math.abs(height) + 'px';
-            selectionBox.style.left = (width > 0 ? startX : currentX) + 'px'; selectionBox.style.top = (height > 0 ? startY : currentY) + 'px';
+            const currentX = e.offsetX;
+            const currentY = e.offsetY;
+            const width = currentX - startX;
+            const height = currentY - startY;
+            
+            selectionBox.style.width = Math.abs(width) + 'px';
+            selectionBox.style.height = Math.abs(height) + 'px';
+            selectionBox.style.left = (width > 0 ? startX : currentX) + 'px';
+            selectionBox.style.top = (height > 0 ? startY : currentY) + 'px';
         });
 
         window.addEventListener('mouseup', (e) => {
-            if (isPanning) {
-                isPanning = false;
-                canvas.style.cursor = activeInputId ? 'crosshair' : 'grab';
-                return;
-            }
             if (!isDrawing) return;
-            isDrawing = false; selectionBox.style.display = 'none';
+            isDrawing = false;
+            selectionBox.style.display = 'none';
 
-            const endX = e.offsetX; const endY = e.offsetY;
+            // Coordenadas calculadas según el escalado del CSS
+            const endX = e.offsetX;
+            const endY = e.offsetY;
             const ratioX = canvas.width / canvas.clientWidth;
             const ratioY = canvas.height / canvas.clientHeight;
+
             const cropX = Math.min(startX, endX) * ratioX;
             const cropY = Math.min(startY, endY) * ratioY;
             const cropW = Math.abs(endX - startX) * ratioX;
             const cropH = Math.abs(endY - startY) * ratioY;
 
             if (cropW < 10 || cropH < 10) return; 
+
             extraerTextoDeRecorte(cropX, cropY, cropW, cropH);
         });
 
@@ -665,15 +676,42 @@
                 if(activeInputId === 'cuenta') { textoExtraido = textoExtraido.replace(/\D/g, ''); evaluarBanco(textoExtraido); }
                 if(activeInputId === 'telefono') textoExtraido = textoExtraido.replace(/[^\d\-\s]/g, '');
                 if(activeInputId === 'contacto_cedula') textoExtraido = textoExtraido.replace(/\D/g, ''); 
+                
                 if(activeInputId === 'serial') {
                     textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase().replace(/(ASIGNADO|POSVENTA)/g, '');
-                    if(!/\d/.test(textoExtraido) && textoExtraido !== "") alert("⚠️ Advertencia: El serial extraído no contiene números.");
+                    if(!/\d/.test(textoExtraido) && textoExtraido !== "") {
+                        alert("⚠️ Advertencia: El serial extraído (" + textoExtraido + ") no contiene números.");
+                    }
                 }
                 if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
 
-                if (textoExtraido) document.getElementById(activeInputId).value = textoExtraido;
+                if (textoExtraido) {
+                    document.getElementById(activeInputId).value = textoExtraido;
+                }
 
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; }
+        }
+
+        function evaluarBanco(numeroCuenta) {
+            if (numeroCuenta.length >= 4) {
+                const prefijo = numeroCuenta.substring(0, 4);
+                const selectBanco = document.getElementById('banco');
+                for (let option of selectBanco.options) {
+                    if (option.getAttribute('data-pref') === prefijo) { selectBanco.value = option.value; break; }
+                }
+            }
+        }
+
+        function optimizarImagenParaOCR(imgUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = img.width; tempCanvas.height = img.height;
+                    tempCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
+                    tempCtx.drawImage(img, 0, 0); resolve(tempCanvas.toDataURL('image/jpeg', 1.0));
+                }; img.src = imgUrl;
+            });
         }
 
         // --- MANEJO DE ARCHIVOS ---
@@ -701,7 +739,8 @@
             });
             
             overlay.style.display = 'none'; 
-            previewContainer.style.display = 'flex'; // Aseguramos que el contenedor general sea visible
+            previewContainer.style.display = 'flex';
+            zoomControls.style.display = 'flex';
             
             const wrapper = document.createElement('div'); wrapper.className = 'galeria-item'; wrapper.dataset.id = id;
             const thumb = document.createElement(file.type.startsWith('image/') ? 'img' : 'div'); thumb.className = 'thumb';
@@ -764,7 +803,7 @@
                     baseCanvasWidth = img.width;
                     baseCanvasHeight = img.height;
                     ctx.drawImage(img, 0, 0); 
-                    resetZoom(); // Ajusta automáticamente la imagen al contenedor
+                    resetZoom(); 
                 };
                 img.src = archivo.renderedUrl;
             }
@@ -780,49 +819,11 @@
                 overlay.style.display = 'flex';
                 canvasContainer.style.display = 'none';
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                cancelarSeleccion();
-            } else {
-                mostrarArchivo(archivosMemoria[archivosMemoria.length - 1].id);
-            }
+                activeInputId = null;
+            } else { mostrarArchivo(archivosMemoria[archivosMemoria.length - 1].id); }
         }
 
-        document.getElementById('btn-limpiar').addEventListener('click', () => {
-            if(confirm("¿Estás seguro de borrar toda la información y archivos de esta carga?")) {
-                form.reset();
-                document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
-                archivosMemoria.forEach(a => URL.revokeObjectURL(a.url));
-                archivosMemoria = [];
-                galeria.innerHTML = '';
-                previewContainer.style.display = 'none';
-                overlay.style.display = 'flex';
-                canvasContainer.style.display = 'none';
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                cancelarSeleccion();
-                document.getElementById('resultado-crm').style.display = 'none';
-            }
-        });
-
-        // --- AUTO-RELLENADO PARA PERSONA NATURAL ---
-        document.getElementById('comercio').addEventListener('input', (e) => {
-            const valRif = document.getElementById('rif').value.toUpperCase();
-            if (valRif.startsWith('V') || valRif.startsWith('E')) {
-                document.getElementById('contacto_nombre').value = e.target.value;
-            }
-        });
-
-        // --- OPTIMIZACIÓN Y OCR AUTOMÁTICO ---
-        function optimizarImagenParaOCR(imgUrl) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = img.width; tempCanvas.height = img.height;
-                    tempCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
-                    tempCtx.drawImage(img, 0, 0); resolve(tempCanvas.toDataURL('image/jpeg', 1.0));
-                }; img.src = imgUrl;
-            });
-        }
-
+        // --- MOTOR OCR AUTOMÁTICO ---
         async function ejecutarOCRAuto(imagenOSource, tipoDoc) {
             if (tipoDoc === 'RIF' && document.getElementById('rif').value !== "") {
                 alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información."); return;
@@ -944,6 +945,7 @@
                         if (firmasUnicas.length > 1) { inputComercio.value = ""; inputComercio.placeholder = "👇 Haz clic aquí para elegir la firma..."; } else { inputComercio.value = firmasUnicas[0]; }
                     }
 
+                    // --- AUTO-RELLENADO PARA PERSONA NATURAL ---
                     const valRif = document.getElementById('rif').value.toUpperCase();
                     if (valRif.startsWith('V') || valRif.startsWith('E')) {
                         document.getElementById('contacto_cedula').value = valRif.replace(/\D/g, '');
@@ -955,16 +957,6 @@
         }
 
         // --- SISTEMA DE VALIDACIÓN Y ENVÍO ---
-        function evaluarBanco(numeroCuenta) {
-            if (numeroCuenta.length >= 4) {
-                const prefijo = numeroCuenta.substring(0, 4);
-                const selectBanco = document.getElementById('banco');
-                for (let option of selectBanco.options) {
-                    if (option.getAttribute('data-pref') === prefijo) { selectBanco.value = option.value; break; }
-                }
-            }
-        }
-
         function validarDatos() {
             document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
             
@@ -1049,8 +1041,7 @@
                     
                     form.reset(); document.getElementById('comercio').style.border = "1px solid #ccc";
                     archivosMemoria.forEach(a => URL.revokeObjectURL(a.url)); archivosMemoria = []; galeria.innerHTML = '';
-                    previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    cancelarSeleccion();
+                    previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height); activeInputId = null;
                 } else { alert("Error en el script: " + resultado.mensaje); }
             } catch (error) { alert("Fallo de conexión. " + error); } finally {
                 btnProcesar.innerText = "Verificar y Generar Expediente"; btnProcesar.style.backgroundColor = "#0d6efd"; btnProcesar.style.color = "white"; btnProcesar.disabled = false;
