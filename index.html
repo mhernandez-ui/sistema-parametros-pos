@@ -373,7 +373,7 @@
     </div>
 
     <script>
-        // PEGA AQUÍ LA NUEVA URL DE TU GOOGLE APPS SCRIPT
+        // LA URL DE TU API ESTÁ AQUÍ YA CONFIGURADA
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
         
         let SESSION = { usuario: "", rol: "" };
@@ -497,12 +497,11 @@
         });
 
         // ==========================================
-        // VISTA DE CARGA (ESCALADO FISICO, RESIZER Y OCR)
+        // VISTA DE CARGA (VARIABLES PRINCIPALES)
         // ==========================================
         const zonaArrastre = document.getElementById('zona-arrastre');
         const overlay = document.getElementById('drop-zone-overlay');
         const fileInput = document.getElementById('file-input');
-        
         const previewContainer = document.getElementById('preview-container');
         const previewWrapper = document.getElementById('preview-wrapper');
         const canvasContainer = document.getElementById('canvas-container');
@@ -511,8 +510,8 @@
         const selectionBox = document.getElementById('selection-box');
         const galeriaResizer = document.getElementById('galeria-resizer');
         const galeriaPanel = document.getElementById('galeria');
+        const galeria = document.getElementById('galeria'); // Referencia unificada
         
-        const galeria = document.getElementById('galeria');
         const form = document.getElementById('param-form');
         const btnLimpiar = document.getElementById('btn-limpiar');
         const resultadoCrm = document.getElementById('resultado-crm');
@@ -531,27 +530,16 @@
         let activeInputId = null;
 
         // --- RESIZER DEL CINTILLO ---
-        galeriaResizer.addEventListener('mousedown', () => {
-            isResizing = true;
-            document.body.style.cursor = 'ns-resize';
-        });
-
+        galeriaResizer.addEventListener('mousedown', () => { isResizing = true; document.body.style.cursor = 'ns-resize'; });
         window.addEventListener('mousemove', (e) => {
             if (!isResizing) return;
             const containerRect = zonaArrastre.getBoundingClientRect();
-            // Calcular nueva altura desde el fondo del contenedor general
             let newHeight = containerRect.bottom - e.clientY;
             if (newHeight < 60) newHeight = 60;
             if (newHeight > containerRect.height - 150) newHeight = containerRect.height - 150;
             galeriaPanel.style.height = newHeight + 'px';
         });
-
-        window.addEventListener('mouseup', () => {
-            if (isResizing) {
-                isResizing = false;
-                document.body.style.cursor = 'default';
-            }
-        });
+        window.addEventListener('mouseup', () => { if (isResizing) { isResizing = false; document.body.style.cursor = 'default'; } });
 
         // --- RASTREO DEL CAMPO ACTIVO PARA RECORTE MÁGICO ---
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(input => {
@@ -560,9 +548,7 @@
                 let labelText = "";
                 if(e.target.parentElement.previousElementSibling && e.target.parentElement.previousElementSibling.tagName === 'LABEL') {
                     labelText = e.target.parentElement.previousElementSibling.innerText;
-                } else {
-                    labelText = e.target.previousElementSibling.innerText;
-                }
+                } else { labelText = e.target.previousElementSibling.innerText; }
                 campoObjetivo.innerText = labelText;
                 indicadorRecorte.style.display = 'flex';
                 input.classList.remove('input-error'); 
@@ -602,8 +588,7 @@
         }
 
         function resetZoom() {
-            // Ajustar el zoom al tamaño del contenedor de previsualización
-            const wrapWidth = previewWrapper.clientWidth - 40; // restando el padding
+            const wrapWidth = previewWrapper.clientWidth - 40; 
             const fitZoom = wrapWidth / baseCanvasWidth;
             zoomActual = fitZoom < 1 ? fitZoom : 1;
             aplicarZoom();
@@ -616,52 +601,38 @@
                 return;
             }
             isDrawing = true;
-            startX = e.offsetX;
-            startY = e.offsetY;
-            selectionBox.style.left = startX + 'px';
-            selectionBox.style.top = startY + 'px';
-            selectionBox.style.width = '0px';
-            selectionBox.style.height = '0px';
+            startX = e.offsetX; startY = e.offsetY;
+            selectionBox.style.left = startX + 'px'; selectionBox.style.top = startY + 'px';
+            selectionBox.style.width = '0px'; selectionBox.style.height = '0px';
             selectionBox.style.display = 'block';
         });
 
         window.addEventListener('mousemove', (e) => {
             if (!isDrawing) return;
-            const currentX = e.offsetX;
-            const currentY = e.offsetY;
-            const width = currentX - startX;
-            const height = currentY - startY;
-            
-            selectionBox.style.width = Math.abs(width) + 'px';
-            selectionBox.style.height = Math.abs(height) + 'px';
-            selectionBox.style.left = (width > 0 ? startX : currentX) + 'px';
-            selectionBox.style.top = (height > 0 ? startY : currentY) + 'px';
+            const currentX = e.offsetX; const currentY = e.offsetY;
+            const width = currentX - startX; const height = currentY - startY;
+            selectionBox.style.width = Math.abs(width) + 'px'; selectionBox.style.height = Math.abs(height) + 'px';
+            selectionBox.style.left = (width > 0 ? startX : currentX) + 'px'; selectionBox.style.top = (height > 0 ? startY : currentY) + 'px';
         });
 
         window.addEventListener('mouseup', (e) => {
             if (!isDrawing) return;
-            isDrawing = false;
-            selectionBox.style.display = 'none';
+            isDrawing = false; selectionBox.style.display = 'none';
 
-            // Coordenadas calculadas según el escalado del CSS
-            const endX = e.offsetX;
-            const endY = e.offsetY;
+            const endX = e.offsetX; const endY = e.offsetY;
             const ratioX = canvas.width / canvas.clientWidth;
             const ratioY = canvas.height / canvas.clientHeight;
-
             const cropX = Math.min(startX, endX) * ratioX;
             const cropY = Math.min(startY, endY) * ratioY;
             const cropW = Math.abs(endX - startX) * ratioX;
             const cropH = Math.abs(endY - startY) * ratioY;
 
             if (cropW < 10 || cropH < 10) return; 
-
             extraerTextoDeRecorte(cropX, cropY, cropW, cropH);
         });
 
         async function extraerTextoDeRecorte(x, y, w, h) {
             ocrLoading.style.display = 'block'; ocrLoading.innerText = "Extrayendo recorte... ✂️";
-
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = w; tempCanvas.height = h;
             const tempCtx = tempCanvas.getContext('2d');
@@ -679,15 +650,11 @@
                 
                 if(activeInputId === 'serial') {
                     textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase().replace(/(ASIGNADO|POSVENTA)/g, '');
-                    if(!/\d/.test(textoExtraido) && textoExtraido !== "") {
-                        alert("⚠️ Advertencia: El serial extraído (" + textoExtraido + ") no contiene números.");
-                    }
+                    if(!/\d/.test(textoExtraido) && textoExtraido !== "") { alert("⚠️ Advertencia: El serial extraído no contiene números."); }
                 }
                 if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
 
-                if (textoExtraido) {
-                    document.getElementById(activeInputId).value = textoExtraido;
-                }
+                if (textoExtraido) { document.getElementById(activeInputId).value = textoExtraido; }
 
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; }
         }
@@ -700,18 +667,6 @@
                     if (option.getAttribute('data-pref') === prefijo) { selectBanco.value = option.value; break; }
                 }
             }
-        }
-
-        function optimizarImagenParaOCR(imgUrl) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = img.width; tempCanvas.height = img.height;
-                    tempCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
-                    tempCtx.drawImage(img, 0, 0); resolve(tempCanvas.toDataURL('image/jpeg', 1.0));
-                }; img.src = imgUrl;
-            });
         }
 
         // --- MANEJO DE ARCHIVOS ---
@@ -740,7 +695,6 @@
             
             overlay.style.display = 'none'; 
             previewContainer.style.display = 'flex';
-            zoomControls.style.display = 'flex';
             
             const wrapper = document.createElement('div'); wrapper.className = 'galeria-item'; wrapper.dataset.id = id;
             const thumb = document.createElement(file.type.startsWith('image/') ? 'img' : 'div'); thumb.className = 'thumb';
@@ -754,8 +708,14 @@
                 if (this.value !== "") {
                     this.classList.remove('pendiente');
                     if (this.value === 'RIF' || this.value === 'CORREO' || this.value === 'BANCO' || this.value === 'CEDULA') {
-                        const archivoActual = archivosMemoria.find(a => a.id === id);
-                        ejecutarOCRAuto(archivoActual.renderedUrl, this.value);
+                        // Esperar que la imagen esté lista en memoria
+                        const checkExist = setInterval(() => {
+                            const checkArchivo = archivosMemoria.find(a => a.id === id);
+                            if (checkArchivo) {
+                                clearInterval(checkExist);
+                                ejecutarOCRAuto(checkArchivo.renderedUrl, this.value);
+                            }
+                        }, 200);
                     }
                 } else { this.classList.add('pendiente'); }
             };
@@ -788,6 +748,18 @@
             });
         }
 
+        function optimizarImagenParaOCR(imgUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = img.width; tempCanvas.height = img.height;
+                    tempCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
+                    tempCtx.drawImage(img, 0, 0); resolve(tempCanvas.toDataURL('image/jpeg', 1.0));
+                }; img.src = imgUrl;
+            });
+        }
+
         function mostrarArchivo(id) {
             document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
             const activeThumb = document.querySelector(`.galeria-item[data-id="${id}"] .thumb`);
@@ -798,10 +770,8 @@
                 canvasContainer.style.display = 'block';
                 const img = new Image();
                 img.onload = () => { 
-                    canvas.width = img.width; 
-                    canvas.height = img.height; 
-                    baseCanvasWidth = img.width;
-                    baseCanvasHeight = img.height;
+                    canvas.width = img.width; canvas.height = img.height; 
+                    baseCanvasWidth = img.width; baseCanvasHeight = img.height;
                     ctx.drawImage(img, 0, 0); 
                     resetZoom(); 
                 };
@@ -815,11 +785,8 @@
             const item = document.querySelector(`.galeria-item[data-id="${id}"]`); if (item) item.remove();
             
             if (archivosMemoria.length === 0) {
-                previewContainer.style.display = 'none';
-                overlay.style.display = 'flex';
-                canvasContainer.style.display = 'none';
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                activeInputId = null;
+                previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none';
+                ctx.clearRect(0, 0, canvas.width, canvas.height); activeInputId = null;
             } else { mostrarArchivo(archivosMemoria[archivosMemoria.length - 1].id); }
         }
 
