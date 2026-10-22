@@ -40,14 +40,20 @@
         .btn-agregar { background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
         .btn-agregar:hover { background: #157347; }
         #drop-zone-overlay { flex: 1; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 1.1rem; text-align: center; padding: 20px;}
-        #preview-container { flex: 1; display: none; padding: 10px; flex-direction: column; height: 0; position: relative;}
-        .zoom-controls { display: flex; justify-content: center; gap: 10px; margin: 10px; background: #dee2e6; padding: 5px; border-radius: 5px; z-index: 20;}
-        .btn-zoom { background: #6c757d; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; font-weight: bold;}
-        .preview-wrapper { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 20px;}
-        #canvas-container { position: relative; transform-origin: top center; transition: transform 0.2s ease-out; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: #fff; display: none;}
-        #preview-canvas { max-width: 100%; display: block; cursor: crosshair; }
+        #preview-container { flex: 1; display: none; padding: 0; flex-direction: column; height: 100%; position: relative;}
+        
+        .zoom-controls { display: flex; justify-content: center; align-items: center; gap: 10px; background: #dee2e6; padding: 8px; border-bottom: 1px solid #ccc; z-index: 20;}
+        .btn-zoom { background: #6c757d; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .btn-zoom:hover { background: #5a6268; }
+        
+        /* ESCALADO Y DESPLAZAMIENTO REPARADO */
+        .preview-wrapper { flex: 1; overflow: auto; padding: 20px; background: #d7dadd; position: relative;}
+        #canvas-container { margin: 0 auto; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: #fff; display: none;}
+        #preview-canvas { display: block; width: 100%; height: 100%; cursor: grab; }
         #selection-box { position: absolute; border: 2px dashed #0d6efd; background: rgba(13, 110, 253, 0.2); pointer-events: none; display: none; z-index: 10;}
+        
         #ocr-loading { display: none; position: absolute; top: 70px; right: 10px; background: #ffc107; color: #000; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 30;}
+        
         .galeria { height: 95px; display: flex; gap: 15px; padding: 15px 5px 5px 5px; overflow-x: auto; border-top: 1px solid #ccc; background: #f8f9fa; z-index: 20;}
         .galeria-item { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 80px;}
         .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff; transition: 0.2s;}
@@ -55,7 +61,9 @@
         .thumb.pdf-icon { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: #dc3545; background: #fff;}
         .doc-tipo { font-size: 0.7rem; padding: 2px; border-radius: 3px; border: 1px solid #0d6efd; width: 100%; text-align: center; margin-top: 5px;}
         .btn-eliminar { position: absolute; top: -8px; right: 2px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer;}
-        #indicador-recorte { background: #cfe2ff; color: #084298; border: 1px solid #b6d4fe; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.85rem; font-weight: bold; text-align: center; display: none;}
+        
+        #indicador-recorte { background: #cfe2ff; color: #084298; border: 1px solid #b6d4fe; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.85rem; font-weight: bold; text-align: center; display: none; align-items: center; justify-content: space-between;}
+        .btn-cancelar-recorte { background: #084298; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8rem;}
         
         .form-section-title { font-size: 0.95rem; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; margin-top: 10px; font-weight: bold;}
         .form-group { margin-bottom: 12px; }
@@ -76,7 +84,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem;}
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
         th { background-color: #e9ecef; color: #495057; }
-        .fila-pendiente { background-color: #fff3cd !important; } /* Resalta los pendientes */
+        .fila-pendiente { background-color: #fff3cd !important; }
         .btn-tabla { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-right: 5px;}
         .btn-editar { background: #ffc107; color: #000; }
         .btn-eliminar-registro { background: #dc3545; color: white; }
@@ -116,9 +124,7 @@
     <!-- CONTENEDOR DE LA APLICACIÓN -->
     <div id="app-container" style="display: none;">
         
-        <!-- ==========================================
-             VISTA 1: CARGA DE DOCUMENTOS (EXACTO COMO ANTES)
-             ========================================== -->
+        <!-- VISTA DE CARGA -->
         <div id="vista-carga" class="vista active">
             <div class="visor" id="zona-arrastre">
                 <div class="toolbar">
@@ -129,16 +135,19 @@
                 <div id="ocr-loading">Analizando documento... 🔍</div>
                 <div id="drop-zone-overlay">Tus documentos aparecerán aquí.</div>
                 
-                <div class="zoom-controls" id="zoom-controls" style="display: none;">
-                    <button class="btn-zoom" onclick="cambiarZoom(0.2)">+</button>
-                    <button class="btn-zoom" onclick="cambiarZoom(-0.2)">-</button>
-                    <button class="btn-zoom" onclick="resetZoom()" style="font-size: 0.9rem;">Restablecer</button>
-                </div>
+                <div id="preview-container">
+                    <div class="zoom-controls" id="zoom-controls">
+                        <button class="btn-zoom" onclick="cambiarZoom(-0.2)">➖ Alejar</button>
+                        <button class="btn-zoom" onclick="cambiarZoom(0.2)">➕ Acercar</button>
+                        <button class="btn-zoom" onclick="resetZoom()" style="background:#0d6efd;">Ajustar a pantalla</button>
+                        <span style="font-size: 0.8rem; margin-left: 10px; color:#495057;">💡 <i>Arrastra el documento para moverlo</i></span>
+                    </div>
 
-                <div class="preview-wrapper">
-                    <div id="canvas-container">
-                        <canvas id="preview-canvas"></canvas>
-                        <div id="selection-box"></div>
+                    <div class="preview-wrapper" id="preview-wrapper">
+                        <div id="canvas-container">
+                            <canvas id="preview-canvas"></canvas>
+                            <div id="selection-box"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="galeria" id="galeria"></div>
@@ -146,7 +155,11 @@
 
             <div class="formulario">
                 <h2 style="margin-top: 0; font-size: 1.4rem; margin-bottom: 5px;">Instalaciones - Registro</h2>
-                <div id="indicador-recorte">🎯 Recorte Mágico Listo: Dibuja un cuadro en la imagen para enviar el texto a la casilla <span id="campo-objetivo" style="text-decoration: underline; text-transform: uppercase;"></span></div>
+                
+                <div id="indicador-recorte">
+                    <span>🎯 <b>Recorte Mágico:</b> Enmarca el texto para la casilla <span id="campo-objetivo" style="text-decoration:underline; text-transform:uppercase;"></span></span>
+                    <button type="button" class="btn-cancelar-recorte" onclick="cancelarSeleccion()">Cancelar Selección</button>
+                </div>
 
                 <form id="param-form">
                     <div class="form-section-title">Datos del RIF</div>
@@ -291,9 +304,7 @@
             </div>
         </div>
 
-        <!-- ==========================================
-             VISTA 2: CONSULTA DE SOLICITUDES
-             ========================================== -->
+        <!-- VISTA DE CONSULTA (TABLA) -->
         <div id="vista-consulta" class="vista">
             <div class="tabla-contenedor" style="width: 100%;">
                 <h2 style="margin-top: 0; color: #0d6efd;">Gestión de Solicitudes</h2>
@@ -319,7 +330,6 @@
                 </table>
             </div>
         </div>
-
     </div>
 
     <!-- MODAL DE EDICIÓN -->
@@ -353,8 +363,8 @@
     </div>
 
     <script>
-        // ¡REEMPLAZA ESTA URL POR LA DE TU NUEVO SCRIPT DE GOOGLE!
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
+        // PEGA AQUÍ LA NUEVA URL DE TU GOOGLE APPS SCRIPT
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_iX-q4gP_m1gO3Y_d1o-m_2yV_aT_bT-L_yT_T-b_yT_m/exec";
         
         let SESSION = { usuario: "", rol: "" };
 
@@ -412,7 +422,7 @@
         }
 
         // ==========================================
-        // LÓGICA DE LA VISTA DE CONSULTA (TABLA)
+        // VISTA DE CONSULTA (TABLA)
         // ==========================================
         async function cargarSolicitudes() {
             const tbody = document.getElementById('tbody-solicitudes');
@@ -433,9 +443,7 @@
                     }
                     
                     data.datos.reverse().forEach(reg => {
-                        // Resaltar si el afiliado es pendiente
                         const esPendiente = (reg.afiliado.toUpperCase() === "PENDIENTE") ? "fila-pendiente" : "";
-                        
                         const tr = document.createElement('tr');
                         tr.className = esPendiente;
                         tr.innerHTML = `
@@ -461,7 +469,6 @@
 
         async function eliminarRegistro(idUnico) {
             if(!confirm("¿Estás seguro de que deseas ELIMINAR definitivamente esta solicitud? Esta acción no se puede deshacer.")) return;
-            
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
@@ -470,13 +477,9 @@
                 const data = await response.json();
                 if(data.status === "exito") {
                     alert("Registro eliminado exitosamente.");
-                    cargarSolicitudes(); // Recargar tabla
-                } else {
-                    alert("Error: " + data.mensaje);
-                }
-            } catch(e) {
-                alert("Fallo de conexión.");
-            }
+                    cargarSolicitudes(); 
+                } else { alert("Error: " + data.mensaje); }
+            } catch(e) { alert("Fallo de conexión."); }
         }
 
         function abrirEdicion(id, comercio, rif, afiliado, serial) {
@@ -507,52 +510,43 @@
                 const data = await response.json();
                 if(data.status === "exito") {
                     document.getElementById('modal-edicion').style.display = 'none';
-                    cargarSolicitudes(); // Refrescar vista
-                } else {
-                    alert("Error al actualizar.");
-                }
-            } catch(err) {
-                alert("Error de conexión.");
-            }
+                    cargarSolicitudes(); 
+                } else { alert("Error al actualizar."); }
+            } catch(err) { alert("Error de conexión."); }
             btn.innerText = "Guardar Cambios"; btn.disabled = false;
         });
 
         // ==========================================
-        // LÓGICA DE LA VISTA DE CARGA (OCR, CANVAS, ETC)
-        // (El código de captura mágica se mantiene idéntico)
+        // VISTA DE CARGA (OCR, LÓGICA DE CANVAS Y ZOOM)
         // ==========================================
         const zonaArrastre = document.getElementById('zona-arrastre');
         const overlay = document.getElementById('drop-zone-overlay');
         const fileInput = document.getElementById('file-input');
         
+        const previewContainer = document.getElementById('preview-container');
+        const previewWrapper = document.getElementById('preview-wrapper');
         const canvasContainer = document.getElementById('canvas-container');
         const canvas = document.getElementById('preview-canvas');
         const ctx = canvas.getContext('2d');
         const selectionBox = document.getElementById('selection-box');
         
-        const zoomControls = document.getElementById('zoom-controls');
         const galeria = document.getElementById('galeria');
         const form = document.getElementById('param-form');
-        const btnLimpiar = document.getElementById('btn-limpiar');
-        const resultadoCrm = document.getElementById('resultado-crm');
         const btnProcesar = document.getElementById('btn-procesar');
         const ocrLoading = document.getElementById('ocr-loading');
         const indicadorRecorte = document.getElementById('indicador-recorte');
         const campoObjetivo = document.getElementById('campo-objetivo');
         
         let archivosMemoria = [];
+        let baseCanvasWidth = 0;
+        let baseCanvasHeight = 0;
         let zoomActual = 1;
         let isDrawing = false;
-        let startX, startY;
+        let isPanning = false;
+        let startX, startY, panStartX, panStartY, scrollLeftStart, scrollTopStart;
         let activeInputId = null;
 
-        document.getElementById('comercio').addEventListener('input', (e) => {
-            const valRif = document.getElementById('rif').value.toUpperCase();
-            if (valRif.startsWith('V') || valRif.startsWith('E')) {
-                document.getElementById('contacto_nombre').value = e.target.value;
-            }
-        });
-
+        // --- RASTREO Y CANCELACIÓN DEL CAMPO ACTIVO ---
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(input => {
             input.addEventListener('focus', (e) => {
                 activeInputId = e.target.id;
@@ -563,36 +557,69 @@
                     labelText = e.target.previousElementSibling.innerText;
                 }
                 campoObjetivo.innerText = labelText;
-                indicadorRecorte.style.display = 'block';
+                indicadorRecorte.style.display = 'flex';
+                canvas.style.cursor = 'crosshair';
                 input.classList.remove('input-error'); 
             });
         });
 
-        btnLimpiar.addEventListener('click', () => {
-            if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
-                form.reset();
-                document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
-                archivosMemoria.forEach(a => URL.revokeObjectURL(a.url));
-                archivosMemoria = [];
-                galeria.innerHTML = '';
-                canvasContainer.style.display = 'none';
-                overlay.style.display = 'flex';
-                zoomControls.style.display = 'none';
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                indicadorRecorte.style.display = 'none';
-                resultadoCrm.style.display = 'none';
-                activeInputId = null;
+        function cancelarSeleccion() {
+            activeInputId = null;
+            indicadorRecorte.style.display = 'none';
+            canvas.style.cursor = 'grab';
+        }
+
+        // --- SISTEMA DE ZOOM REPARADO (SIN TRANSFORM SCALE) ---
+        function aplicarZoom() {
+            if (baseCanvasWidth === 0) return;
+            canvasContainer.style.width = (baseCanvasWidth * zoomActual) + 'px';
+            canvasContainer.style.height = (baseCanvasHeight * zoomActual) + 'px';
+        }
+
+        function cambiarZoom(incremento) {
+            zoomActual += incremento;
+            if (zoomActual < 0.2) zoomActual = 0.2; 
+            if (zoomActual > 5) zoomActual = 5;
+            aplicarZoom();
+        }
+        
+        function resetZoom() {
+            const wrapWidth = previewWrapper.clientWidth - 40;
+            const fitZoom = wrapWidth / baseCanvasWidth;
+            zoomActual = fitZoom < 1 ? fitZoom : 1;
+            aplicarZoom();
+        }
+
+        // --- RATÓN: RECORTE Y ARRASTRE DE LIENZO ---
+        canvasContainer.addEventListener('mousedown', (e) => {
+            // Arrastrar si NO hay campo activo o se usa botón central/shift
+            if (!activeInputId || e.button === 1 || e.shiftKey) {
+                e.preventDefault();
+                isPanning = true;
+                canvas.style.cursor = 'grabbing';
+                panStartX = e.clientX;
+                panStartY = e.clientY;
+                scrollLeftStart = previewWrapper.scrollLeft;
+                scrollTopStart = previewWrapper.scrollTop;
+                return;
             }
-        });
-
-        canvas.addEventListener('mousedown', (e) => {
-            if (!activeInputId) return;
-            isDrawing = true; startX = e.offsetX; startY = e.offsetY;
+            
+            // Recorte Mágico
+            isDrawing = true;
+            startX = e.offsetX; startY = e.offsetY;
             selectionBox.style.left = startX + 'px'; selectionBox.style.top = startY + 'px';
-            selectionBox.style.width = '0px'; selectionBox.style.height = '0px'; selectionBox.style.display = 'block';
+            selectionBox.style.width = '0px'; selectionBox.style.height = '0px'; 
+            selectionBox.style.display = 'block';
         });
 
-        canvas.addEventListener('mousemove', (e) => {
+        window.addEventListener('mousemove', (e) => {
+            if (isPanning) {
+                const dx = e.clientX - panStartX;
+                const dy = e.clientY - panStartY;
+                previewWrapper.scrollLeft = scrollLeftStart - dx;
+                previewWrapper.scrollTop = scrollTopStart - dy;
+                return;
+            }
             if (!isDrawing) return;
             const currentX = e.offsetX; const currentY = e.offsetY;
             const width = currentX - startX; const height = currentY - startY;
@@ -600,42 +627,47 @@
             selectionBox.style.left = (width > 0 ? startX : currentX) + 'px'; selectionBox.style.top = (height > 0 ? startY : currentY) + 'px';
         });
 
-        canvas.addEventListener('mouseup', (e) => {
+        window.addEventListener('mouseup', (e) => {
+            if (isPanning) {
+                isPanning = false;
+                canvas.style.cursor = activeInputId ? 'crosshair' : 'grab';
+                return;
+            }
             if (!isDrawing) return;
             isDrawing = false; selectionBox.style.display = 'none';
+
             const endX = e.offsetX; const endY = e.offsetY;
-            const ratioX = canvas.width / canvas.clientWidth; const ratioY = canvas.height / canvas.clientHeight;
-            const cropX = Math.min(startX, endX) * ratioX; const cropY = Math.min(startY, endY) * ratioY;
-            const cropW = Math.abs(endX - startX) * ratioX; const cropH = Math.abs(endY - startY) * ratioY;
+            const ratioX = canvas.width / canvas.clientWidth;
+            const ratioY = canvas.height / canvas.clientHeight;
+            const cropX = Math.min(startX, endX) * ratioX;
+            const cropY = Math.min(startY, endY) * ratioY;
+            const cropW = Math.abs(endX - startX) * ratioX;
+            const cropH = Math.abs(endY - startY) * ratioY;
+
             if (cropW < 10 || cropH < 10) return; 
             extraerTextoDeRecorte(cropX, cropY, cropW, cropH);
         });
 
         async function extraerTextoDeRecorte(x, y, w, h) {
             ocrLoading.style.display = 'block'; ocrLoading.innerText = "Extrayendo recorte... ✂️";
-            const tempCanvas = document.createElement('canvas'); tempCanvas.width = w; tempCanvas.height = h;
-            const tempCtx = tempCanvas.getContext('2d'); tempCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = w; tempCanvas.height = h;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
             
             try {
                 const imgData = tempCanvas.toDataURL('image/png');
                 const result = await Tesseract.recognize(imgData, 'spa');
                 let textoExtraido = result.data.text.trim();
                 
-                if(activeInputId === 'correo') {
-                    textoExtraido = textoExtraido.replace(/\s+/g, '').toLowerCase();
-                }
-                if(activeInputId === 'cuenta') {
-                    textoExtraido = textoExtraido.replace(/\D/g, ''); 
-                    evaluarBanco(textoExtraido); 
-                }
+                if(activeInputId === 'correo') textoExtraido = textoExtraido.replace(/\s+/g, '').toLowerCase();
+                if(activeInputId === 'cuenta') { textoExtraido = textoExtraido.replace(/\D/g, ''); evaluarBanco(textoExtraido); }
                 if(activeInputId === 'telefono') textoExtraido = textoExtraido.replace(/[^\d\-\s]/g, '');
                 if(activeInputId === 'contacto_cedula') textoExtraido = textoExtraido.replace(/\D/g, ''); 
-                
                 if(activeInputId === 'serial') {
                     textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase().replace(/(ASIGNADO|POSVENTA)/g, '');
-                    if(!/\d/.test(textoExtraido) && textoExtraido !== "") {
-                        alert("⚠️ Advertencia: El serial extraído (" + textoExtraido + ") no contiene números.");
-                    }
+                    if(!/\d/.test(textoExtraido) && textoExtraido !== "") alert("⚠️ Advertencia: El serial extraído no contiene números.");
                 }
                 if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
 
@@ -644,28 +676,7 @@
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; }
         }
 
-        function evaluarBanco(numeroCuenta) {
-            if (numeroCuenta.length >= 4) {
-                const prefijo = numeroCuenta.substring(0, 4);
-                const selectBanco = document.getElementById('banco');
-                for (let option of selectBanco.options) {
-                    if (option.getAttribute('data-pref') === prefijo) { selectBanco.value = option.value; break; }
-                }
-            }
-        }
-
-        function optimizarImagenParaOCR(imgUrl) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = img.width; tempCanvas.height = img.height;
-                    tempCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
-                    tempCtx.drawImage(img, 0, 0); resolve(tempCanvas.toDataURL('image/jpeg', 1.0));
-                }; img.src = imgUrl;
-            });
-        }
-
+        // --- MANEJO DE ARCHIVOS ---
         fileInput.addEventListener('change', (e) => { Array.from(e.target.files).forEach(agregarArchivo); fileInput.value = ''; });
         zonaArrastre.addEventListener('dragover', (e) => { e.preventDefault(); overlay.classList.add('dragover'); });
         zonaArrastre.addEventListener('dragleave', () => { overlay.classList.remove('dragover'); });
@@ -683,11 +694,14 @@
 
         function agregarArchivo(file) {
             const urlTemporal = URL.createObjectURL(file); const id = Date.now() + Math.random();
+            
             preRenderizarArchivo(file, urlTemporal).then((renderedUrl) => {
                 archivosMemoria.push({ id, file: file, url: urlTemporal, renderedUrl: renderedUrl });
                 mostrarArchivo(id);
             });
-            overlay.style.display = 'none'; zoomControls.style.display = 'flex';
+            
+            overlay.style.display = 'none'; 
+            previewContainer.style.display = 'flex'; // Aseguramos que el contenedor general sea visible
             
             const wrapper = document.createElement('div'); wrapper.className = 'galeria-item'; wrapper.dataset.id = id;
             const thumb = document.createElement(file.type.startsWith('image/') ? 'img' : 'div'); thumb.className = 'thumb';
@@ -715,8 +729,9 @@
 
         function preRenderizarArchivo(file, urlTemporal) {
             return new Promise((resolve) => {
-                if (file.type.startsWith('image/')) optimizarImagenParaOCR(urlTemporal).then(optUrl => resolve(optUrl));
-                else if (file.type === 'application/pdf') {
+                if (file.type.startsWith('image/')) {
+                    optimizarImagenParaOCR(urlTemporal).then(optUrl => resolve(optUrl));
+                } else if (file.type === 'application/pdf') {
                     ocrLoading.style.display = 'block'; ocrLoading.innerText = "Procesando PDF... 📄";
                     const fileReader = new FileReader();
                     fileReader.onload = async function() {
@@ -738,11 +753,19 @@
             document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
             const activeThumb = document.querySelector(`.galeria-item[data-id="${id}"] .thumb`);
             if(activeThumb) activeThumb.classList.add('active');
+            
             const archivo = archivosMemoria.find(a => a.id === id);
             if (archivo && archivo.renderedUrl) {
-                resetZoom(); canvasContainer.style.display = 'block';
+                canvasContainer.style.display = 'block';
                 const img = new Image();
-                img.onload = () => { canvas.width = img.width; canvas.height = img.height; ctx.drawImage(img, 0, 0); };
+                img.onload = () => { 
+                    canvas.width = img.width; 
+                    canvas.height = img.height; 
+                    baseCanvasWidth = img.width;
+                    baseCanvasHeight = img.height;
+                    ctx.drawImage(img, 0, 0); 
+                    resetZoom(); // Ajusta automáticamente la imagen al contenedor
+                };
                 img.src = archivo.renderedUrl;
             }
         }
@@ -753,15 +776,58 @@
             const item = document.querySelector(`.galeria-item[data-id="${id}"]`); if (item) item.remove();
             
             if (archivosMemoria.length === 0) {
-                canvasContainer.style.display = 'none'; overlay.style.display = 'flex'; zoomControls.style.display = 'none';
-                ctx.clearRect(0, 0, canvas.width, canvas.height); indicadorRecorte.style.display = 'none'; activeInputId = null;
-            } else { mostrarArchivo(archivosMemoria[archivosMemoria.length - 1].id); }
+                previewContainer.style.display = 'none';
+                overlay.style.display = 'flex';
+                canvasContainer.style.display = 'none';
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                cancelarSeleccion();
+            } else {
+                mostrarArchivo(archivosMemoria[archivosMemoria.length - 1].id);
+            }
+        }
+
+        document.getElementById('btn-limpiar').addEventListener('click', () => {
+            if(confirm("¿Estás seguro de borrar toda la información y archivos de esta carga?")) {
+                form.reset();
+                document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+                archivosMemoria.forEach(a => URL.revokeObjectURL(a.url));
+                archivosMemoria = [];
+                galeria.innerHTML = '';
+                previewContainer.style.display = 'none';
+                overlay.style.display = 'flex';
+                canvasContainer.style.display = 'none';
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                cancelarSeleccion();
+                document.getElementById('resultado-crm').style.display = 'none';
+            }
+        });
+
+        // --- AUTO-RELLENADO PARA PERSONA NATURAL ---
+        document.getElementById('comercio').addEventListener('input', (e) => {
+            const valRif = document.getElementById('rif').value.toUpperCase();
+            if (valRif.startsWith('V') || valRif.startsWith('E')) {
+                document.getElementById('contacto_nombre').value = e.target.value;
+            }
+        });
+
+        // --- OPTIMIZACIÓN Y OCR AUTOMÁTICO ---
+        function optimizarImagenParaOCR(imgUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = img.width; tempCanvas.height = img.height;
+                    tempCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
+                    tempCtx.drawImage(img, 0, 0); resolve(tempCanvas.toDataURL('image/jpeg', 1.0));
+                }; img.src = imgUrl;
+            });
         }
 
         async function ejecutarOCRAuto(imagenOSource, tipoDoc) {
             if (tipoDoc === 'RIF' && document.getElementById('rif').value !== "") {
                 alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información."); return;
             }
+
             ocrLoading.style.display = 'block'; ocrLoading.innerText = "Extrayendo Datos... 🔍"; btnProcesar.disabled = true;
 
             try {
@@ -783,8 +849,7 @@
 
                 if (tipoDoc === 'CORREO') {
                     const textoSinEspacios = textoPlano.replace(/\s+/g, '');
-                    let textoCorregido = textoSinEspacios.replace(/(?:\(a\)|\[a\]|\{a\}|©|®|&)/g, '@');
-                    const matchCorreo = textoCorregido.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+                    const matchCorreo = textoSinEspacios.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
                     if (matchCorreo) document.getElementById('correo').value = matchCorreo[0].toLowerCase();
 
                     const matchTelefono = textoSinEspacios.match(/(?:0414|0424|0412|0416|0426|02\d{2})\d{7}/);
@@ -823,6 +888,7 @@
                     }
 
                     const regexRifExact = /[JGVE]-?\d{8,9}/i; let estadoLectura = "BUSCANDO_RIF"; let direccionFiscal = "";
+
                     for (let i = 0; i < lineas.length; i++) {
                         let linea = lineas[i].split(/(FECHA|ÚLTIMA|ULTIMA|N° COMP|N\* COMP|N°COMP|GERENCIA|DATOS DE REGISTRO|IDENTIFICACIÓN DEL CONTRIBUYENTE|TRIBUTOS|SEDE REGIONAL|INTERNOS)/i)[0].trim();
                         if (!linea) continue; const lineaUpper = linea.toUpperCase();
@@ -871,6 +937,7 @@
                     }
 
                     if (direccionFiscal) document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
+                    
                     if (arrayFirmas.length > 0) {
                         let firmasUnicas = [...new Set(arrayFirmas)];
                         firmasUnicas.forEach(firma => { let option = document.createElement('option'); option.value = firma; listaFirmas.appendChild(option); });
@@ -885,6 +952,17 @@
                     }
                 }
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; btnProcesar.disabled = false; }
+        }
+
+        // --- SISTEMA DE VALIDACIÓN Y ENVÍO ---
+        function evaluarBanco(numeroCuenta) {
+            if (numeroCuenta.length >= 4) {
+                const prefijo = numeroCuenta.substring(0, 4);
+                const selectBanco = document.getElementById('banco');
+                for (let option of selectBanco.options) {
+                    if (option.getAttribute('data-pref') === prefijo) { selectBanco.value = option.value; break; }
+                }
+            }
         }
 
         function validarDatos() {
@@ -917,7 +995,7 @@
             e.preventDefault();
             if (!validarDatos()) return;
 
-            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos... Espera unos segundos.";
+            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos...";
             btnProcesar.style.backgroundColor = "#ffc107"; btnProcesar.style.color = "#000"; btnProcesar.disabled = true;
 
             const filePromises = archivosMemoria.map(a => {
@@ -971,7 +1049,8 @@
                     
                     form.reset(); document.getElementById('comercio').style.border = "1px solid #ccc";
                     archivosMemoria.forEach(a => URL.revokeObjectURL(a.url)); archivosMemoria = []; galeria.innerHTML = '';
-                    canvasContainer.style.display = 'none'; overlay.style.display = 'flex'; zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height); indicadorRecorte.style.display = 'none';
+                    previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelarSeleccion();
                 } else { alert("Error en el script: " + resultado.mensaje); }
             } catch (error) { alert("Fallo de conexión. " + error); } finally {
                 btnProcesar.innerText = "Verificar y Generar Expediente"; btnProcesar.style.backgroundColor = "#0d6efd"; btnProcesar.style.color = "white"; btnProcesar.disabled = false;
