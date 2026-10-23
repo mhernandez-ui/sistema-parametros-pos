@@ -12,41 +12,32 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; height: 100vh; overflow: hidden; display: flex; flex-direction: column;}
         
-        /* --- LOGIN SCREEN --- */
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #212529; display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .login-box { background: white; padding: 40px; border-radius: 10px; width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center;}
         .login-box h2 { margin-top: 0; color: #0d6efd;}
         .login-box input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1rem;}
         .login-box button { width: 100%; padding: 10px; background: #0d6efd; color: white; border: none; border-radius: 5px; font-size: 1.1rem; cursor: pointer; font-weight: bold;}
-        .login-box button:hover { background: #0b5ed7;}
-
-        /* --- NAVEGACIÓN --- */
+        
         .navbar { background: #0d6efd; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
         .nav-brand { font-size: 1.2rem; font-weight: bold; }
         .nav-menu button { background: none; border: none; color: white; padding: 8px 15px; cursor: pointer; font-size: 1rem; border-radius: 5px; margin-left: 5px; transition: 0.2s;}
         .nav-menu button:hover, .nav-menu button.active { background: rgba(255,255,255,0.2); }
         .nav-user { font-size: 0.9rem; background: #0a58ca; padding: 5px 10px; border-radius: 20px; margin-left: 15px;}
 
-        /* --- CONTENEDORES PRINCIPALES --- */
         #app-container { display: flex; flex: 1; height: calc(100vh - 50px); }
         .vista { display: none; width: 100%; height: 100%; }
         .vista.active { display: flex; }
 
-        /* --- VISTA DE CARGA --- */
         .visor { flex: 1; border-right: 2px solid #ccc; display: flex; flex-direction: column; background: #e9ecef; position: relative; overflow: hidden;}
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         
         .toolbar { background: #dee2e6; padding: 10px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #ccc; z-index: 20;}
-        .btn-agregar { background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
-        .btn-agregar:hover { background: #157347; }
+        .btn-agregar { background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.9rem;}
         .toolbar-info { font-size: 0.85rem; color: #495057; }
 
         #drop-zone-overlay { flex: 1; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 1.1rem; text-align: center; padding: 20px;}
-        #drop-zone-overlay.dragover { background: #dee2e6; border: 3px dashed #495057; }
-        
         #preview-container { flex: 1; display: none; flex-direction: column; height: 100%; position: relative;}
         
-        /* ESCALADO Y BARRAS NATIVAS */
         #viewer-area { flex: 1; position: relative; overflow: hidden; background: #d7dadd; }
         .preview-wrapper { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: auto; padding: 20px; }
         
@@ -55,14 +46,14 @@
         #selection-box { position: absolute; border: 2px dashed #0d6efd; background: rgba(13, 110, 253, 0.2); pointer-events: none; display: none; z-index: 10;}
         
         .map-zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 50; }
-        .btn-map-zoom { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.75); border: 1px solid rgba(0,0,0,0.2); border-radius: 8px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: background 0.2s; display: flex; align-items: center; justify-content: center; color: #333;}
+        .btn-map-zoom { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.75); border: 1px solid rgba(0,0,0,0.2); border-radius: 8px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;}
         .btn-map-zoom:hover { background: rgba(255, 255, 255, 1); }
 
-        #ocr-loading { display: none; position: absolute; top: 20px; right: 20px; background: #ffc107; color: #000; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 60; box-shadow: 0 2px 5px rgba(0,0,0,0.3);}
+        #ocr-loading { display: none; position: absolute; top: 20px; right: 20px; background: #ffc107; color: #000; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 60;}
         
         .galeria { height: 110px; flex-shrink: 0; display: flex; gap: 15px; padding: 15px 10px; overflow-x: auto; overflow-y: hidden; background: #f8f9fa; border-top: 1px solid #ccc; z-index: 20;}
         .galeria-item { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 80px;}
-        .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff; transition: 0.2s;}
+        .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff;}
         .thumb.active { border-color: #0d6efd; transform: scale(1.05);}
         .thumb.pdf-icon { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: #dc3545; background: #fff;}
         .doc-tipo { font-size: 0.7rem; padding: 2px; border-radius: 3px; border: 1px solid #0d6efd; width: 100%; text-align: center; margin-top: 5px;}
@@ -82,11 +73,9 @@
         .btn-principal { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 2; font-weight: bold;}
         .btn-secundario { background-color: #dc3545; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 1; font-weight: bold;}
         #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;}
-        #enlace-drive { margin-top: 10px; display: block; color: #0dcaf0; font-weight: bold; text-decoration: underline;}
 
-        /* --- VISTAS DE TABLA (CONSULTA Y TCRS) --- */
-        .vista-tabla { flex-direction: column; padding: 20px; background: #f8f9fa; overflow-y: auto;}
-        .tabla-contenedor { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px;}
+        .vista-tabla { flex-direction: column; padding: 20px; background: #f8f9fa; overflow-y: auto; align-items: center;}
+        .tabla-contenedor { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; width: 100%; max-width: 1200px;}
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem;}
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
         th { background-color: #e9ecef; color: #495057; }
@@ -97,7 +86,11 @@
 
         #modal-edicion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center;}
         .modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px;}
-        .modal-content h3 { margin-top: 0; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 10px;}
+        
+        /* DISEÑO PANEL TCRS */
+        .tcrs-panel { max-width: 800px; margin: 0 auto;}
+        .tcrs-resultado-box { background: #e8f0fe; padding: 20px; border-radius: 8px; border: 1px solid #b6d4fe; margin-top: 20px; display: none;}
+        .tcrs-form-box { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ccc; margin-top: 15px;}
     </style>
 </head>
 <body>
@@ -117,11 +110,11 @@
 
     <!-- NAVBAR PRINCIPAL -->
     <div class="navbar" id="navbar" style="display: none;">
-        <div class="nav-brand">Gestor de Parámetros POS</div>
+        <div class="nav-brand">Gestor POS Integrado</div>
         <div class="nav-menu">
-            <button class="active" onclick="cambiarVista('carga')" id="nav-carga">Nueva Carga</button>
+            <button class="active" onclick="cambiarVista('carga')" id="nav-carga">Nueva Instalación</button>
             <button onclick="cambiarVista('consulta'); cargarSolicitudes();" id="nav-consulta">Mis Solicitudes</button>
-            <button onclick="cambiarVista('tcrs')" id="nav-tcrs">Desinstalaciones y TCRS</button>
+            <button onclick="cambiarVista('tcrs')" id="nav-tcrs">Desinstalaciones / TCRS</button>
             <span class="nav-user" id="user-display">User</span>
             <button onclick="cerrarSesion()" style="background: #dc3545;">Salir</button>
         </div>
@@ -130,7 +123,7 @@
     <div id="app-container" style="display: none;">
         
         <!-- ==========================================
-             VISTA 1: CARGA
+             VISTA 1: CARGA DE INSTALACIONES
              ========================================== -->
         <div id="vista-carga" class="vista active">
             <div class="visor" id="zona-arrastre">
@@ -314,11 +307,11 @@
         </div>
 
         <!-- ==========================================
-             VISTA 2: CONSULTA (TABLA MIS SOLICITUDES)
+             VISTA 2: CONSULTA DE SOLICITUDES
              ========================================== -->
         <div id="vista-consulta" class="vista vista-tabla">
-            <div class="tabla-contenedor" style="width: 100%;">
-                <h2 style="margin-top: 0; color: #0d6efd;">Gestión de Solicitudes</h2>
+            <div class="tabla-contenedor">
+                <h2 style="margin-top: 0; color: #0d6efd;">Gestión de Solicitudes (Instalaciones)</h2>
                 <p style="color: #6c757d; font-size: 0.9rem;">Las filas en amarillo indican que el Afiliado está PENDIENTE. Puedes editar o eliminar solicitudes que no hayan sido enviadas a la procesadora.</p>
                 <button onclick="cargarSolicitudes()" class="btn-principal" style="width: auto; padding: 8px 15px; margin-bottom: 10px;">↻ Actualizar Tabla</button>
                 
@@ -343,34 +336,77 @@
         </div>
 
         <!-- ==========================================
-             VISTA 3: DESINSTALACIONES Y TCRS
+             VISTA 3: DESINSTALACIONES Y TCRS (PARQUE TOTAL)
              ========================================== -->
         <div id="vista-tcrs" class="vista vista-tabla">
-            <div class="tabla-contenedor" style="width: 100%; max-width: 800px; margin: 0 auto;">
-                <h2 style="margin-top: 0; color: #0d6efd;">Consulta de Parque (Desinstalaciones y TCRS)</h2>
-                <p style="color: #6c757d; font-size: 0.9rem;">Consulta el estatus actual de un equipo en la Base de Datos del Parque Total más reciente.</p>
+            <div class="tabla-contenedor tcrs-panel">
+                <h2 style="margin-top: 0; color: #0d6efd;">Desinstalaciones y TCRS</h2>
+                <p style="color: #6c757d; font-size: 0.9rem;">Consulta el serial en el <b>Parque Total</b> más reciente alojado en Drive. Si el equipo está activo, podrás procesar su retiro o cambio de titular.</p>
                 
-                <form id="form-tcrs">
+                <form id="form-consulta-parque">
                     <div class="form-row">
                         <div class="form-group">
                             <label>Serial del Equipo</label>
-                            <input type="text" id="tcrs-serial" placeholder="Ej: NFD300348979" required>
+                            <input type="text" id="tcrs-serial-buscar" placeholder="Ej: NFD300348979" required>
                         </div>
                         <div class="form-group">
-                            <label>Procesadora / Banco</label>
-                            <select id="tcrs-banco" required>
+                            <label>Procesadora / Plataforma</label>
+                            <select id="tcrs-banco-buscar" required>
                                 <option value="">Seleccione...</option>
                                 <option value="PLATCO">Platco (Mercantil / Provincial)</option>
                                 <option value="CREDICARD">Credicard (Resto de Bancos)</option>
                             </select>
                         </div>
                     </div>
-                    <button type="submit" class="btn-principal" id="btn-consultar-tcrs" style="margin-top:10px;">🔍 Consultar Serial</button>
+                    <button type="submit" class="btn-principal" id="btn-consultar-parque" style="width:100%; margin-top:10px;">🔍 Consultar Estatus del Equipo</button>
                 </form>
                 
-                <div id="tcrs-resultado" style="margin-top: 25px; display: none;"></div>
+                <!-- Resultados del Parque Total -->
+                <div id="tcrs-resultado-box" class="tcrs-resultado-box">
+                    <h3 style="margin-top:0; color:#084298;">✅ Equipo Activo Encontrado</h3>
+                    <p style="font-size:0.85rem; color:#495057; margin-bottom:10px;">Archivo Leído: <b id="tcrs-archivo-nombre"></b></p>
+                    <div id="tcrs-tabla-datos" style="max-height: 250px; overflow-y: auto; background: white; border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;"></div>
+                    
+                    <!-- Formulario de Completado para TCRS -->
+                    <div class="tcrs-form-box">
+                        <h4 style="margin-top:0; color:#dc3545;">Procesar Solicitud con estos datos</h4>
+                        <form id="form-guardar-tcrs">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Tipo de Gestión</label>
+                                    <select id="tcrs-gestion" required>
+                                        <option value="">Seleccione...</option>
+                                        <option value="DESINSTALACION">Desinstalación Definitiva</option>
+                                        <option value="TCRS">Traspaso / Cambio Razón Social</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Operadora Actual</label>
+                                    <select id="tcrs-operadora" required>
+                                        <option value="">Seleccione...</option>
+                                        <option value="DIGITEL">Digitel</option>
+                                        <option value="MOVISTAR">Movistar</option>
+                                        <option value="MOVILNET">Movilnet</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Teléfono de Contacto</label>
+                                    <input type="text" id="tcrs-telefono" placeholder="Ej: 04141234567" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Correo de Contacto</label>
+                                    <input type="email" id="tcrs-correo" placeholder="Ej: contacto@empresa.com" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-principal" id="btn-enviar-tcrs" style="width:100%; margin-top:10px; background:#198754;">💾 Enviar a Base de Datos TCRS</button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
+
     </div>
 
     <!-- MODAL DE EDICIÓN -->
@@ -408,6 +444,8 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
         
         let SESSION = { usuario: "", rol: "" };
+        let INFO_PARQUE_ACTUAL = null; // Almacena temporalmente la fila leída del Excel
+        let BANCO_PARQUE_ACTUAL = "";
 
         // --- SISTEMA DE LOGIN ---
         document.getElementById('form-login').addEventListener('submit', async (e) => {
@@ -423,11 +461,8 @@
             };
 
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload) 
-                });
+                // NOTA: SIN headers DE CONTENT-TYPE PARA EVITAR BLOQUEOS DE CORS
+                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if(data.status === "exito") {
                     SESSION.usuario = data.usuario; SESSION.rol = data.rol;
@@ -452,7 +487,6 @@
             document.getElementById('login-pass').value = "";
         }
 
-        // --- NAVEGACIÓN ---
         function cambiarVista(vista) {
             document.querySelectorAll('.vista').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-menu button').forEach(b => b.classList.remove('active'));
@@ -461,16 +495,129 @@
         }
 
         // ==========================================
-        // VISTA DE CONSULTA (TABLA)
+        // MÓDULO: DESINSTALACIONES Y TCRS
+        // ==========================================
+        document.getElementById('form-consulta-parque').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-consultar-parque');
+            const resBox = document.getElementById('tcrs-resultado-box');
+            
+            btn.innerText = "⏳ Consultando Base de Datos en Drive..."; btn.disabled = true;
+            resBox.style.display = 'none';
+
+            const payload = {
+                accion: "consultar_parque",
+                serial: document.getElementById('tcrs-serial-buscar').value.trim().toUpperCase(),
+                banco: document.getElementById('tcrs-banco-buscar').value
+            };
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const data = await response.json();
+                
+                if (data.status === "exito") {
+                    INFO_PARQUE_ACTUAL = data.datos;
+                    BANCO_PARQUE_ACTUAL = payload.banco;
+                    
+                    document.getElementById('tcrs-archivo-nombre').innerText = data.archivo;
+                    
+                    let htmlTabla = `<table style="width:100%; border-collapse: collapse; font-size:0.85rem;">`;
+                    for (const [key, value] of Object.entries(data.datos)) {
+                        htmlTabla += `<tr><td style="padding:5px; border-bottom:1px solid #eee; font-weight:bold; width:40%;">${key}</td>
+                                          <td style="padding:5px; border-bottom:1px solid #eee;">${value}</td></tr>`;
+                    }
+                    htmlTabla += `</table>`;
+                    document.getElementById('tcrs-tabla-datos').innerHTML = htmlTabla;
+                    
+                    resBox.style.display = 'block';
+                } else {
+                    alert("❌ " + data.mensaje);
+                }
+            } catch(e) {
+                alert("Fallo de conexión al buscar el equipo.");
+            } finally {
+                btn.innerText = "🔍 Consultar Estatus del Equipo"; btn.disabled = false;
+            }
+        });
+
+        // Enviar a la hoja TCRS
+        document.getElementById('form-guardar-tcrs').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if(!INFO_PARQUE_ACTUAL) return alert("Debes consultar un equipo primero.");
+
+            const btn = document.getElementById('btn-enviar-tcrs');
+            btn.innerText = "💾 Guardando Solicitud..."; btn.disabled = true;
+
+            // Helper para ignorar mayúsculas/minúsculas en las llaves del JSON
+            const valObj = (keyObj) => {
+                const fKey = Object.keys(INFO_PARQUE_ACTUAL).find(k => k.toLowerCase() === keyObj.toLowerCase());
+                return fKey ? INFO_PARQUE_ACTUAL[fKey] : "";
+            };
+
+            const isPlatco = (BANCO_PARQUE_ACTUAL === "PLATCO");
+
+            // Mapeo dinámico según la estructura Credicard / Platco
+            const t_banco = isPlatco ? valObj("Adquirente") : valObj("NOMBRE_BANCO");
+            const t_modelo = valObj("MODELO") || valObj("Modelo");
+            const t_serial = isPlatco ? valObj("Serial fisico") : valObj("SERIAL");
+            const t_razon = isPlatco ? valObj("Establecimiento") : valObj("NOMBRE_AFILIADO");
+            const t_afiliacion = isPlatco ? valObj("Codigo Platco") : valObj("CODIGO_AFILIADO");
+            const t_terminal = isPlatco ? valObj("Terminal") : valObj("NUMPOS");
+            
+            let t_rif = "";
+            if (isPlatco) {
+                const codP = String(valObj("Codigo Platco"));
+                if(codP.length > 3) t_rif = codP.slice(0, -3);
+            } else {
+                t_rif = valObj("RIF_AFILIADO");
+            }
+
+            const payload = {
+                accion: "guardar_tcrs",
+                usuario_actual: SESSION.usuario,
+                banco: t_banco,
+                modelo: t_modelo,
+                operadora: document.getElementById('tcrs-operadora').value,
+                serialSalida: t_serial,
+                razonSocial: t_razon,
+                afiliacion: t_afiliacion,
+                terminal: t_terminal,
+                rif: t_rif,
+                tipoGestion: document.getElementById('tcrs-gestion').value,
+                telefono: document.getElementById('tcrs-telefono').value.replace(/\D/g, ''),
+                correo: document.getElementById('tcrs-correo').value.trim()
+            };
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const data = await response.json();
+                
+                if (data.status === "exito") {
+                    alert("✅ Solicitud guardada con éxito en la base de datos TCRS.");
+                    document.getElementById('form-guardar-tcrs').reset();
+                    document.getElementById('tcrs-resultado-box').style.display = 'none';
+                    document.getElementById('tcrs-serial-buscar').value = "";
+                } else {
+                    alert("Error: " + data.mensaje);
+                }
+            } catch(e) {
+                alert("Fallo de conexión.");
+            } finally {
+                btn.innerText = "💾 Enviar a Base de Datos TCRS"; btn.disabled = false;
+            }
+        });
+
+
+        // ==========================================
+        // VISTA DE CONSULTA (TABLA MIS SOLICITUDES)
         // ==========================================
         async function cargarSolicitudes() {
             const tbody = document.getElementById('tbody-solicitudes');
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Cargando información... ⏳</td></tr>';
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ accion: "leer", usuario_actual: SESSION.usuario, rol: SESSION.rol })
+                    method: 'POST', body: JSON.stringify({ accion: "leer", usuario_actual: SESSION.usuario, rol: SESSION.rol })
                 });
                 const data = await response.json();
                 
@@ -502,11 +649,7 @@
         async function eliminarRegistro(idUnico) {
             if(!confirm("¿Estás seguro de que deseas ELIMINAR definitivamente esta solicitud? Esta acción no se puede deshacer.")) return;
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ accion: "eliminar", id_registro: idUnico }) 
-                });
+                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ accion: "eliminar", id_registro: idUnico }) });
                 const data = await response.json();
                 if(data.status === "exito") { alert("Registro eliminado exitosamente."); cargarSolicitudes(); } 
                 else { alert("Error: " + data.mensaje); }
@@ -529,11 +672,7 @@
                 afiliado: document.getElementById('edit_afiliado').value, serial: document.getElementById('edit_serial').value
             };
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload) 
-                });
+                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if(data.status === "exito") { document.getElementById('modal-edicion').style.display = 'none'; cargarSolicitudes(); } 
                 else { alert("Error al actualizar."); }
@@ -542,63 +681,11 @@
         });
 
         // ==========================================
-        // VISTA 3: CONSULTA PARQUE (TCRS)
-        // ==========================================
-        document.getElementById('form-tcrs').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btn-consultar-tcrs');
-            const resDiv = document.getElementById('tcrs-resultado');
-            
-            btn.innerText = "Consultando base de datos..."; btn.disabled = true;
-            resDiv.style.display = 'none';
-
-            const payload = {
-                accion: "consultar_parque",
-                serial: document.getElementById('tcrs-serial').value.trim().toUpperCase(),
-                banco: document.getElementById('tcrs-banco').value
-            };
-
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload) 
-                });
-                const data = await response.json();
-                
-                if (data.status === "exito") {
-                    let html = `<div style="background:#e8f0fe; padding:20px; border-radius:8px; border:1px solid #b6d4fe; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                        <h3 style="margin-top:0; color:#084298;">✅ Equipo Encontrado</h3>
-                        <p style="font-size:0.85rem; color:#495057; margin-bottom:15px;">Archivo: <b>${data.archivo}</b> | Hoja: <b>${data.hoja}</b></p>
-                        <table style="width:100%; border-collapse: collapse; font-size:0.9rem; background:white;">`;
-                    
-                    for (const [key, value] of Object.entries(data.datos)) {
-                        html += `<tr><td style="padding:8px; border:1px solid #ccc; font-weight:bold; width:40%; background:#f8f9fa;">${key}</td>
-                                     <td style="padding:8px; border:1px solid #ccc;">${value}</td></tr>`;
-                    }
-                    html += `</table></div>`;
-                    resDiv.innerHTML = html;
-                } else {
-                    resDiv.innerHTML = `<div style="background:#f8d7da; padding:20px; border-radius:8px; border:1px solid #f5c2c7; color:#842029;">
-                        <h3 style="margin-top:0;">❌ No Encontrado</h3>
-                        <p>${data.mensaje}</p>
-                    </div>`;
-                }
-                resDiv.style.display = 'block';
-            } catch(e) {
-                alert("Fallo de conexión al consultar el serial.");
-            } finally {
-                btn.innerText = "🔍 Consultar Serial"; btn.disabled = false;
-            }
-        });
-
-        // ==========================================
-        // VISTA DE CARGA (VARIABLES PRINCIPALES Y VISOR MAP-STYLE)
+        // VISTA DE CARGA DE INSTALACIONES (OCR Y CANVAS)
         // ==========================================
         const zonaArrastre = document.getElementById('zona-arrastre');
         const overlay = document.getElementById('drop-zone-overlay');
         const fileInput = document.getElementById('file-input');
-        
         const previewContainer = document.getElementById('preview-container');
         const previewWrapper = document.getElementById('preview-wrapper');
         const canvasContainer = document.getElementById('canvas-container');
@@ -624,7 +711,6 @@
         let startX, startY;
         let activeInputId = null;
 
-        // --- RASTREO DEL CAMPO ACTIVO PARA RECORTE MÁGICO ---
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(input => {
             input.addEventListener('focus', (e) => {
                 activeInputId = e.target.id;
@@ -638,7 +724,6 @@
             });
         });
 
-        // --- BOTÓN LIMPIAR TODO ---
         btnLimpiar.addEventListener('click', () => {
             if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
                 form.reset();
@@ -657,7 +742,6 @@
             }
         });
 
-        // --- CONTROLES DE ZOOM CON DIMENSIONES REALES ---
         function aplicarZoom() {
             if (baseCanvasWidth === 0) return;
             canvasContainer.style.width = (baseCanvasWidth * zoomActual) + 'px';
@@ -678,17 +762,11 @@
             aplicarZoom();
         }
 
-        // --- HERRAMIENTA DE RECORTE MÁGICO DIRECTO ---
         canvasContainer.addEventListener('mousedown', (e) => {
-            if (!activeInputId) {
-                alert("Primero haz clic en la casilla del formulario (se iluminará en azul) donde quieres guardar el dato.");
-                return;
-            }
-            isDrawing = true;
-            startX = e.offsetX; startY = e.offsetY;
+            if (!activeInputId) { alert("Primero haz clic en la casilla del formulario (se iluminará en azul) donde quieres guardar el dato."); return; }
+            isDrawing = true; startX = e.offsetX; startY = e.offsetY;
             selectionBox.style.left = startX + 'px'; selectionBox.style.top = startY + 'px';
-            selectionBox.style.width = '0px'; selectionBox.style.height = '0px';
-            selectionBox.style.display = 'block';
+            selectionBox.style.width = '0px'; selectionBox.style.height = '0px'; selectionBox.style.display = 'block';
         });
 
         window.addEventListener('mousemove', (e) => {
@@ -704,12 +782,9 @@
             isDrawing = false; selectionBox.style.display = 'none';
 
             const endX = e.offsetX; const endY = e.offsetY;
-            const ratioX = canvas.width / canvas.clientWidth;
-            const ratioY = canvas.height / canvas.clientHeight;
-            const cropX = Math.min(startX, endX) * ratioX;
-            const cropY = Math.min(startY, endY) * ratioY;
-            const cropW = Math.abs(endX - startX) * ratioX;
-            const cropH = Math.abs(endY - startY) * ratioY;
+            const ratioX = canvas.width / canvas.clientWidth; const ratioY = canvas.height / canvas.clientHeight;
+            const cropX = Math.min(startX, endX) * ratioX; const cropY = Math.min(startY, endY) * ratioY;
+            const cropW = Math.abs(endX - startX) * ratioX; const cropH = Math.abs(endY - startY) * ratioY;
 
             if (cropW < 10 || cropH < 10) return; 
             extraerTextoDeRecorte(cropX, cropY, cropW, cropH);
@@ -717,10 +792,8 @@
 
         async function extraerTextoDeRecorte(x, y, w, h) {
             ocrLoading.style.display = 'block'; ocrLoading.innerText = "Extrayendo recorte... ✂️";
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = w; tempCanvas.height = h;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+            const tempCanvas = document.createElement('canvas'); tempCanvas.width = w; tempCanvas.height = h;
+            const tempCtx = tempCanvas.getContext('2d'); tempCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
             
             try {
                 const imgData = tempCanvas.toDataURL('image/png');
@@ -731,7 +804,6 @@
                 if(activeInputId === 'cuenta') { textoExtraido = textoExtraido.replace(/\D/g, ''); evaluarBanco(textoExtraido); }
                 if(activeInputId === 'telefono') textoExtraido = textoExtraido.replace(/[^\d\-\s]/g, '');
                 if(activeInputId === 'contacto_cedula') textoExtraido = textoExtraido.replace(/\D/g, ''); 
-                
                 if(activeInputId === 'serial') {
                     textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase().replace(/(ASIGNADO|POSVENTA)/g, '');
                     if(!/\d/.test(textoExtraido) && textoExtraido !== "") { alert("⚠️ Advertencia: El serial extraído no contiene números."); }
@@ -753,7 +825,6 @@
             }
         }
 
-        // --- MANEJO DE ARCHIVOS ---
         fileInput.addEventListener('change', (e) => { Array.from(e.target.files).forEach(agregarArchivo); fileInput.value = ''; });
         zonaArrastre.addEventListener('dragover', (e) => { e.preventDefault(); overlay.classList.add('dragover'); });
         zonaArrastre.addEventListener('dragleave', () => { overlay.classList.remove('dragover'); });
@@ -771,15 +842,11 @@
 
         function agregarArchivo(file) {
             const urlTemporal = URL.createObjectURL(file); const id = Date.now() + Math.random();
-            
             preRenderizarArchivo(file, urlTemporal).then((renderedUrl) => {
                 archivosMemoria.push({ id, file: file, url: urlTemporal, renderedUrl: renderedUrl });
                 mostrarArchivo(id);
             });
-            
-            overlay.style.display = 'none'; 
-            previewContainer.style.display = 'flex';
-            zoomControls.style.display = 'flex';
+            overlay.style.display = 'none'; previewContainer.style.display = 'flex'; zoomControls.style.display = 'flex';
             
             const wrapper = document.createElement('div'); wrapper.className = 'galeria-item'; wrapper.dataset.id = id;
             const thumb = document.createElement(file.type.startsWith('image/') ? 'img' : 'div'); thumb.className = 'thumb';
@@ -793,13 +860,9 @@
                 if (this.value !== "") {
                     this.classList.remove('pendiente');
                     if (this.value === 'RIF' || this.value === 'CORREO' || this.value === 'BANCO' || this.value === 'CEDULA') {
-                        // Esperar que la imagen esté lista en memoria
                         const checkExist = setInterval(() => {
                             const checkArchivo = archivosMemoria.find(a => a.id === id);
-                            if (checkArchivo) {
-                                clearInterval(checkExist);
-                                ejecutarOCRAuto(checkArchivo.renderedUrl, this.value);
-                            }
+                            if (checkArchivo) { clearInterval(checkExist); ejecutarOCRAuto(checkArchivo.renderedUrl, this.value); }
                         }, 200);
                     }
                 } else { this.classList.add('pendiente'); }
@@ -813,9 +876,8 @@
 
         function preRenderizarArchivo(file, urlTemporal) {
             return new Promise((resolve) => {
-                if (file.type.startsWith('image/')) {
-                    optimizarImagenParaOCR(urlTemporal).then(optUrl => resolve(optUrl));
-                } else if (file.type === 'application/pdf') {
+                if (file.type.startsWith('image/')) { optimizarImagenParaOCR(urlTemporal).then(optUrl => resolve(optUrl)); } 
+                else if (file.type === 'application/pdf') {
                     ocrLoading.style.display = 'block'; ocrLoading.innerText = "Procesando PDF... 📄";
                     const fileReader = new FileReader();
                     fileReader.onload = async function() {
@@ -825,9 +887,7 @@
                         const tempCanvas = document.createElement('canvas'); tempCanvas.width = viewport.width; tempCanvas.height = viewport.height;
                         const tempCtx = tempCanvas.getContext('2d');
                         await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
-                        optimizarImagenParaOCR(tempCanvas.toDataURL('image/png')).then(optUrl => {
-                            ocrLoading.style.display = 'none'; resolve(optUrl);
-                        });
+                        optimizarImagenParaOCR(tempCanvas.toDataURL('image/png')).then(optUrl => { ocrLoading.style.display = 'none'; resolve(optUrl); });
                     }; fileReader.readAsArrayBuffer(file);
                 }
             });
@@ -857,8 +917,7 @@
                 img.onload = () => { 
                     canvas.width = img.width; canvas.height = img.height; 
                     baseCanvasWidth = img.width; baseCanvasHeight = img.height;
-                    ctx.drawImage(img, 0, 0); 
-                    resetZoom(); 
+                    ctx.drawImage(img, 0, 0); resetZoom(); 
                 };
                 img.src = archivo.renderedUrl;
             }
@@ -871,17 +930,14 @@
             
             if (archivosMemoria.length === 0) {
                 previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none';
-                zoomControls.style.display = 'none';
-                ctx.clearRect(0, 0, canvas.width, canvas.height); activeInputId = null;
+                zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height); activeInputId = null;
             } else { mostrarArchivo(archivosMemoria[archivosMemoria.length - 1].id); }
         }
 
-        // --- MOTOR OCR AUTOMÁTICO ---
         async function ejecutarOCRAuto(imagenOSource, tipoDoc) {
             if (tipoDoc === 'RIF' && document.getElementById('rif').value !== "") {
                 alert("Aviso: Ya hay datos de RIF cargados. El sistema no sobreescribirá la información."); return;
             }
-
             ocrLoading.style.display = 'block'; ocrLoading.innerText = "Extrayendo Datos... 🔍"; btnProcesar.disabled = true;
 
             try {
@@ -998,7 +1054,6 @@
                         if (firmasUnicas.length > 1) { inputComercio.value = ""; inputComercio.placeholder = "👇 Haz clic aquí para elegir la firma..."; } else { inputComercio.value = firmasUnicas[0]; }
                     }
 
-                    // --- AUTO-RELLENADO PARA PERSONA NATURAL ---
                     const valRif = document.getElementById('rif').value.toUpperCase();
                     if (valRif.startsWith('V') || valRif.startsWith('E')) {
                         document.getElementById('contacto_cedula').value = valRif.replace(/\D/g, '');
@@ -1009,7 +1064,6 @@
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; btnProcesar.disabled = false; }
         }
 
-        // --- SISTEMA DE VALIDACIÓN Y ENVÍO ---
         function validarDatos() {
             document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
             
@@ -1075,7 +1129,7 @@
             };
 
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(datosParaGuardar) });
+                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(datosParaGuardar) });
                 const resultado = await response.json();
                 
                 if(resultado.status === "exito") {
