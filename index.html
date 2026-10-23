@@ -46,7 +46,7 @@
         
         #preview-container { flex: 1; display: none; flex-direction: column; height: 100%; position: relative;}
         
-        /* ESCALADO, BARRAS NATIVAS Y CONTROLES MAP-STYLE */
+        /* ESCALADO Y BARRAS NATIVAS */
         #viewer-area { flex: 1; position: relative; overflow: hidden; background: #d7dadd; }
         .preview-wrapper { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: auto; padding: 20px; }
         
@@ -60,7 +60,6 @@
 
         #ocr-loading { display: none; position: absolute; top: 20px; right: 20px; background: #ffc107; color: #000; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 60; box-shadow: 0 2px 5px rgba(0,0,0,0.3);}
         
-        /* CINTILLO FIJO */
         .galeria { height: 110px; flex-shrink: 0; display: flex; gap: 15px; padding: 15px 10px; overflow-x: auto; overflow-y: hidden; background: #f8f9fa; border-top: 1px solid #ccc; z-index: 20;}
         .galeria-item { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 80px;}
         .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff; transition: 0.2s;}
@@ -85,8 +84,8 @@
         #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;}
         #enlace-drive { margin-top: 10px; display: block; color: #0dcaf0; font-weight: bold; text-decoration: underline;}
 
-        /* --- VISTA DE CONSULTA (TABLA) --- */
-        #vista-consulta { flex-direction: column; padding: 20px; background: #f8f9fa; overflow-y: auto;}
+        /* --- VISTAS DE TABLA (CONSULTA Y TCRS) --- */
+        .vista-tabla { flex-direction: column; padding: 20px; background: #f8f9fa; overflow-y: auto;}
         .tabla-contenedor { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px;}
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem;}
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
@@ -96,7 +95,6 @@
         .btn-editar { background: #ffc107; color: #000; }
         .btn-eliminar-registro { background: #dc3545; color: white; }
 
-        /* MODAL DE EDICIÓN RÁPIDA */
         #modal-edicion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center;}
         .modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px;}
         .modal-content h3 { margin-top: 0; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 10px;}
@@ -123,15 +121,17 @@
         <div class="nav-menu">
             <button class="active" onclick="cambiarVista('carga')" id="nav-carga">Nueva Carga</button>
             <button onclick="cambiarVista('consulta'); cargarSolicitudes();" id="nav-consulta">Mis Solicitudes</button>
+            <button onclick="cambiarVista('tcrs')" id="nav-tcrs">Desinstalaciones y TCRS</button>
             <span class="nav-user" id="user-display">User</span>
             <button onclick="cerrarSesion()" style="background: #dc3545;">Salir</button>
         </div>
     </div>
 
-    <!-- CONTENEDOR DE LA APLICACIÓN -->
     <div id="app-container" style="display: none;">
         
-        <!-- VISTA DE CARGA -->
+        <!-- ==========================================
+             VISTA 1: CARGA
+             ========================================== -->
         <div id="vista-carga" class="vista active">
             <div class="visor" id="zona-arrastre">
                 <div class="toolbar">
@@ -152,7 +152,6 @@
                             </div>
                         </div>
                         
-                        <!-- BOTONES DE ZOOM TIPO MAPA -->
                         <div class="map-zoom-controls" id="zoom-controls" style="display: none;">
                             <button class="btn-map-zoom" onclick="cambiarZoom(0.2)" title="Acercar">➕</button>
                             <button class="btn-map-zoom" onclick="cambiarZoom(-0.2)" title="Alejar">➖</button>
@@ -160,7 +159,6 @@
                         </div>
                     </div>
 
-                    <!-- CINTILLO INFERIOR FIJO -->
                     <div class="galeria" id="galeria"></div>
                 </div>
             </div>
@@ -315,8 +313,10 @@
             </div>
         </div>
 
-        <!-- VISTA DE CONSULTA (TABLA) -->
-        <div id="vista-consulta" class="vista">
+        <!-- ==========================================
+             VISTA 2: CONSULTA (TABLA MIS SOLICITUDES)
+             ========================================== -->
+        <div id="vista-consulta" class="vista vista-tabla">
             <div class="tabla-contenedor" style="width: 100%;">
                 <h2 style="margin-top: 0; color: #0d6efd;">Gestión de Solicitudes</h2>
                 <p style="color: #6c757d; font-size: 0.9rem;">Las filas en amarillo indican que el Afiliado está PENDIENTE. Puedes editar o eliminar solicitudes que no hayan sido enviadas a la procesadora.</p>
@@ -339,6 +339,36 @@
                         <tr><td colspan="8" style="text-align:center;">Cargando información...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             VISTA 3: DESINSTALACIONES Y TCRS
+             ========================================== -->
+        <div id="vista-tcrs" class="vista vista-tabla">
+            <div class="tabla-contenedor" style="width: 100%; max-width: 800px; margin: 0 auto;">
+                <h2 style="margin-top: 0; color: #0d6efd;">Consulta de Parque (Desinstalaciones y TCRS)</h2>
+                <p style="color: #6c757d; font-size: 0.9rem;">Consulta el estatus actual de un equipo en la Base de Datos del Parque Total más reciente.</p>
+                
+                <form id="form-tcrs">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Serial del Equipo</label>
+                            <input type="text" id="tcrs-serial" placeholder="Ej: NFD300348979" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Procesadora / Banco</label>
+                            <select id="tcrs-banco" required>
+                                <option value="">Seleccione...</option>
+                                <option value="PLATCO">Platco (Mercantil / Provincial)</option>
+                                <option value="CREDICARD">Credicard (Resto de Bancos)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-principal" id="btn-consultar-tcrs" style="margin-top:10px;">🔍 Consultar Serial</button>
+                </form>
+                
+                <div id="tcrs-resultado" style="margin-top: 25px; display: none;"></div>
             </div>
         </div>
     </div>
@@ -374,7 +404,8 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
+        // PEGA AQUÍ LA NUEVA URL DE TU GOOGLE APPS SCRIPT
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwPz2R8nCqM1Zk3n6uVw_B5_H9E5Xl8jQ0P_r4d_zR7fX4o_t/exec";
         
         let SESSION = { usuario: "", rol: "" };
 
@@ -392,7 +423,11 @@
             };
 
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const response = await fetch(GOOGLE_SCRIPT_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload) 
+                });
                 const data = await response.json();
                 if(data.status === "exito") {
                     SESSION.usuario = data.usuario; SESSION.rol = data.rol;
@@ -433,7 +468,9 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Cargando información... ⏳</td></tr>';
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST', body: JSON.stringify({ accion: "leer", usuario_actual: SESSION.usuario, rol: SESSION.rol })
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ accion: "leer", usuario_actual: SESSION.usuario, rol: SESSION.rol })
                 });
                 const data = await response.json();
                 
@@ -465,7 +502,11 @@
         async function eliminarRegistro(idUnico) {
             if(!confirm("¿Estás seguro de que deseas ELIMINAR definitivamente esta solicitud? Esta acción no se puede deshacer.")) return;
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ accion: "eliminar", id_registro: idUnico }) });
+                const response = await fetch(GOOGLE_SCRIPT_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ accion: "eliminar", id_registro: idUnico }) 
+                });
                 const data = await response.json();
                 if(data.status === "exito") { alert("Registro eliminado exitosamente."); cargarSolicitudes(); } 
                 else { alert("Error: " + data.mensaje); }
@@ -488,7 +529,11 @@
                 afiliado: document.getElementById('edit_afiliado').value, serial: document.getElementById('edit_serial').value
             };
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const response = await fetch(GOOGLE_SCRIPT_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload) 
+                });
                 const data = await response.json();
                 if(data.status === "exito") { document.getElementById('modal-edicion').style.display = 'none'; cargarSolicitudes(); } 
                 else { alert("Error al actualizar."); }
@@ -497,7 +542,58 @@
         });
 
         // ==========================================
-        // VISTA DE CARGA (VARIABLES PRINCIPALES)
+        // VISTA 3: CONSULTA PARQUE (TCRS)
+        // ==========================================
+        document.getElementById('form-tcrs').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-consultar-tcrs');
+            const resDiv = document.getElementById('tcrs-resultado');
+            
+            btn.innerText = "Consultando base de datos..."; btn.disabled = true;
+            resDiv.style.display = 'none';
+
+            const payload = {
+                accion: "consultar_parque",
+                serial: document.getElementById('tcrs-serial').value.trim().toUpperCase(),
+                banco: document.getElementById('tcrs-banco').value
+            };
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload) 
+                });
+                const data = await response.json();
+                
+                if (data.status === "exito") {
+                    let html = `<div style="background:#e8f0fe; padding:20px; border-radius:8px; border:1px solid #b6d4fe; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top:0; color:#084298;">✅ Equipo Encontrado</h3>
+                        <p style="font-size:0.85rem; color:#495057; margin-bottom:15px;">Archivo: <b>${data.archivo}</b> | Hoja: <b>${data.hoja}</b></p>
+                        <table style="width:100%; border-collapse: collapse; font-size:0.9rem; background:white;">`;
+                    
+                    for (const [key, value] of Object.entries(data.datos)) {
+                        html += `<tr><td style="padding:8px; border:1px solid #ccc; font-weight:bold; width:40%; background:#f8f9fa;">${key}</td>
+                                     <td style="padding:8px; border:1px solid #ccc;">${value}</td></tr>`;
+                    }
+                    html += `</table></div>`;
+                    resDiv.innerHTML = html;
+                } else {
+                    resDiv.innerHTML = `<div style="background:#f8d7da; padding:20px; border-radius:8px; border:1px solid #f5c2c7; color:#842029;">
+                        <h3 style="margin-top:0;">❌ No Encontrado</h3>
+                        <p>${data.mensaje}</p>
+                    </div>`;
+                }
+                resDiv.style.display = 'block';
+            } catch(e) {
+                alert("Fallo de conexión al consultar el serial.");
+            } finally {
+                btn.innerText = "🔍 Consultar Serial"; btn.disabled = false;
+            }
+        });
+
+        // ==========================================
+        // VISTA DE CARGA (VARIABLES PRINCIPALES Y VISOR MAP-STYLE)
         // ==========================================
         const zonaArrastre = document.getElementById('zona-arrastre');
         const overlay = document.getElementById('drop-zone-overlay');
@@ -979,7 +1075,7 @@
             };
 
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(datosParaGuardar) });
+                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(datosParaGuardar) });
                 const resultado = await response.json();
                 
                 if(resultado.status === "exito") {
