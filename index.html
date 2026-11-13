@@ -81,17 +81,25 @@
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
         th { background-color: #e9ecef; color: #495057; }
         .fila-pendiente { background-color: #fff3cd !important; }
-        .btn-tabla { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-right: 5px;}
-        .btn-editar { background: #ffc107; color: #000; }
-        .btn-eliminar-registro { background: #dc3545; color: white; }
+        
+        /* BOTONES DE LA TABLA (AHORA MÁS VISIBLES) */
+        .btn-tabla { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem; margin-right: 5px; transition: 0.2s;}
+        .btn-editar { background: #ffc107; color: #000; border: 1px solid #d39e00;}
+        .btn-editar:hover { background: #e0a800; }
+        .btn-eliminar-registro { background: #dc3545; color: white; border: 1px solid #b02a37;}
+        .btn-eliminar-registro:hover { background: #c82333; }
 
         /* PANEL TCRS */
         .tcrs-panel { max-width: 800px; margin: 0 auto;}
         .tcrs-resultado-box { background: #e8f0fe; padding: 20px; border-radius: 8px; border: 1px solid #b6d4fe; margin-top: 20px; display: none;}
         .tcrs-form-box { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ccc; margin-top: 15px;}
         
-        /* BLOQUE CONSTITUTIVO ANIMADO */
         #seccion-constitutivo { display: none; background: #fdfdfe; padding: 15px; border-radius: 8px; border: 1px dashed #0d6efd; margin-bottom: 15px;}
+        
+        /* MODAL DE EDICIÓN RÁPIDA (Se mantiene porque editar en línea rompe el diseño de las tablas complejas) */
+        #modal-edicion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center;}
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px;}
+        .modal-content h3 { margin-top: 0; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 10px;}
     </style>
 </head>
 <body>
@@ -345,7 +353,7 @@
         <div id="vista-consulta" class="vista vista-tabla">
             <div class="tabla-contenedor">
                 <h2 style="margin-top: 0; color: #0d6efd;">Gestión de Solicitudes (Instalaciones)</h2>
-                <p style="color: #6c757d; font-size: 0.9rem;">Las filas en amarillo indican que el Afiliado está PENDIENTE. Puedes editar o eliminar solicitudes individualmente (cada serial genera su propio registro).</p>
+                <p style="color: #6c757d; font-size: 0.9rem;">Las filas en amarillo indican que el Afiliado está PENDIENTE. Utiliza los botones de la derecha para Editar o Eliminar cada registro individualmente.</p>
                 <button onclick="cargarSolicitudes()" class="btn-principal" style="width: auto; padding: 8px 15px; margin-bottom: 10px;">↻ Actualizar Tabla</button>
                 
                 <table id="tabla-solicitudes">
@@ -369,7 +377,7 @@
         </div>
 
         <!-- ==========================================
-             VISTA 3: DESINSTALACIONES Y TCRS (PARQUE)
+             VISTA 3: DESINSTALACIONES Y TCRS (PARQUE TOTAL)
              ========================================== -->
         <div id="vista-tcrs" class="vista vista-tabla">
             <div class="tabla-contenedor tcrs-panel">
@@ -400,6 +408,7 @@
                     <p style="font-size:0.85rem; color:#495057; margin-bottom:10px;">Archivo Leído: <b id="tcrs-archivo-nombre"></b></p>
                     <div id="tcrs-tabla-datos" style="max-height: 250px; overflow-y: auto; background: white; border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;"></div>
                     
+                    <!-- Formulario de Completado para TCRS -->
                     <div class="tcrs-form-box">
                         <h4 style="margin-top:0; color:#dc3545;">Procesar Solicitud con estos datos</h4>
                         <form id="form-guardar-tcrs">
@@ -475,19 +484,24 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymMNnozPdKghH76kkT976jShfFP_7DZh-28FJkGfrguUdP7edlPNYpeOqCTEKXlSar/exec";
         
         let SESSION = { usuario: "", rol: "" };
-        let INFO_PARQUE_ACTUAL = null; 
+        let INFO_PARQUE_ACTUAL = null;
         let BANCO_PARQUE_ACTUAL = "";
 
-        // --- SISTEMA DE LOGIN (SIN HEADERS CORS) ---
+        // --- SISTEMA DE LOGIN ---
         document.getElementById('form-login').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-login');
             const errorDiv = document.getElementById('login-error');
             btn.innerText = "Verificando..."; btn.disabled = true;
 
-            const payload = { accion: "login", usuario: document.getElementById('login-user').value.trim(), clave: document.getElementById('login-pass').value.trim() };
+            const payload = {
+                accion: "login",
+                usuario: document.getElementById('login-user').value.trim(),
+                clave: document.getElementById('login-pass').value.trim()
+            };
 
             try {
+                // FETCH LIMPIO SIN HEADERS CORS
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if(data.status === "exito") {
@@ -496,12 +510,17 @@
                     document.getElementById('login-screen').style.display = "none";
                     document.getElementById('navbar').style.display = "flex";
                     document.getElementById('app-container').style.display = "flex";
-                } else { errorDiv.innerText = "Usuario o contraseña incorrectos."; errorDiv.style.display = "block"; }
-            } catch(e) { errorDiv.innerText = "Error de conexión con el servidor."; errorDiv.style.display = "block"; }
+                } else {
+                    errorDiv.innerText = "Usuario o contraseña incorrectos."; errorDiv.style.display = "block";
+                }
+            } catch(e) {
+                errorDiv.innerText = "Error de conexión con el servidor."; errorDiv.style.display = "block";
+            }
             btn.innerText = "Ingresar"; btn.disabled = false;
         });
 
         function cerrarSesion() { location.reload(); }
+        
         function cambiarVista(vista) {
             document.querySelectorAll('.vista').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-menu button').forEach(b => b.classList.remove('active'));
@@ -521,6 +540,7 @@
             const payload = { accion: "consultar_parque", serial: document.getElementById('tcrs-serial-buscar').value.trim().toUpperCase(), banco: document.getElementById('tcrs-banco-buscar').value };
 
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 
@@ -568,6 +588,7 @@
             };
 
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if (data.status === "exito") {
@@ -579,14 +600,14 @@
             } catch(e) { alert("Fallo de conexión."); } finally { btn.innerText = "💾 Enviar a Base de Datos TCRS"; btn.disabled = false; }
         });
 
-
         // ==========================================
-        // VISTA DE CONSULTA DE SOLICITUDES (TABLA)
+        // VISTA DE CONSULTA (TABLA MIS SOLICITUDES)
         // ==========================================
         async function cargarSolicitudes() {
             const tbody = document.getElementById('tbody-solicitudes');
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Cargando información... ⏳</td></tr>';
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ accion: "leer", usuario_actual: SESSION.usuario, rol: SESSION.rol }) });
                 const data = await response.json();
                 
@@ -608,12 +629,13 @@
                         tbody.appendChild(tr);
                     });
                 }
-            } catch(e) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Error de conexión.</td></tr>'; }
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Error de conexión. Asegúrate de configurar la implementación correctamente.</td></tr>'; }
         }
 
         async function eliminarRegistro(idUnico) {
             if(!confirm("¿Estás seguro de que deseas ELIMINAR esta solicitud?")) return;
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ accion: "eliminar", id_registro: idUnico }) });
                 const data = await response.json();
                 if(data.status === "exito") { alert("Registro eliminado exitosamente."); cargarSolicitudes(); } 
@@ -637,6 +659,7 @@
                 afiliado: document.getElementById('edit_afiliado').value, serial: document.getElementById('edit_serial').value
             };
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if(data.status === "exito") { document.getElementById('modal-edicion').style.display = 'none'; cargarSolicitudes(); } 
@@ -646,7 +669,7 @@
         });
 
         // ==========================================
-        // VISTA DE CARGA DE INSTALACIONES (MULTI-SERIAL Y CONSTITUTIVO)
+        // VISTA DE CARGA DE INSTALACIONES
         // ==========================================
         const zonaArrastre = document.getElementById('zona-arrastre');
         const overlay = document.getElementById('drop-zone-overlay');
@@ -673,35 +696,24 @@
         let zoomActual = 1; let isDrawing = false; let startX, startY;
         let activeInputId = null;
 
-        // Mostrar / Ocultar Doc Constitutivo según RIF
         document.getElementById('rif').addEventListener('input', (e) => {
             let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-            if (val.startsWith('J') || val.startsWith('G')) {
-                document.getElementById('seccion-constitutivo').style.display = 'block';
-            } else { document.getElementById('seccion-constitutivo').style.display = 'none'; }
+            if (val.startsWith('J') || val.startsWith('G')) { document.getElementById('seccion-constitutivo').style.display = 'block'; } 
+            else { document.getElementById('seccion-constitutivo').style.display = 'none'; }
         });
 
-        // Autocompletado de Persona Natural
         document.getElementById('comercio').addEventListener('input', (e) => {
             const valRif = document.getElementById('rif').value.toUpperCase();
-            if (valRif.startsWith('V') || valRif.startsWith('E')) {
-                document.getElementById('contacto_nombre').value = e.target.value;
-            }
+            if (valRif.startsWith('V') || valRif.startsWith('E')) { document.getElementById('contacto_nombre').value = e.target.value; }
         });
 
-        // Multiples Seriales
         function agregarSerial() {
             const container = document.getElementById('seriales-container');
-            const div = document.createElement('div');
-            div.className = 'form-row';
-            div.style.marginBottom = '5px';
+            const div = document.createElement('div'); div.className = 'form-row'; div.style.marginBottom = '5px';
             const uniqueId = 'serial_' + Date.now();
-            div.innerHTML = `
-                <input type="text" class="serial-input" id="${uniqueId}" placeholder="Ej: NFD300348979" required style="width: 100%;">
-                <button type="button" class="btn-secundario" onclick="this.parentElement.remove()" style="flex:none; width:45px;" title="Eliminar equipo">❌</button>
-            `;
-            container.appendChild(div);
-            bindFocusEvent(div.querySelector('input'));
+            div.innerHTML = `<input type="text" class="serial-input" id="${uniqueId}" placeholder="Ej: NFD300348979" required style="width: 100%;">
+                             <button type="button" class="btn-secundario" onclick="this.parentElement.remove()" style="flex:none; width:45px;" title="Eliminar equipo">❌</button>`;
+            container.appendChild(div); bindFocusEvent(div.querySelector('input'));
         }
 
         function bindFocusEvent(input) {
@@ -709,43 +721,31 @@
                 activeInputId = e.target.id;
                 let labelText = "";
                 if(e.target.parentElement.parentElement && e.target.parentElement.parentElement.previousElementSibling && e.target.parentElement.parentElement.previousElementSibling.tagName === 'LABEL') {
-                    labelText = e.target.parentElement.parentElement.previousElementSibling.innerText; // Para Seriales
+                    labelText = e.target.parentElement.parentElement.previousElementSibling.innerText; 
                 } else if(e.target.parentElement.previousElementSibling && e.target.parentElement.previousElementSibling.tagName === 'LABEL') {
                     labelText = e.target.parentElement.previousElementSibling.innerText;
                 } else { labelText = e.target.previousElementSibling.innerText; }
-                campoObjetivo.innerText = labelText;
-                indicadorRecorte.style.display = 'block';
-                input.classList.remove('input-error'); 
+                campoObjetivo.innerText = labelText; indicadorRecorte.style.display = 'block'; input.classList.remove('input-error'); 
             });
         }
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(bindFocusEvent);
 
         btnLimpiar.addEventListener('click', () => {
             if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
-                form.reset();
-                document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+                form.reset(); document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
                 archivosMemoria.forEach(a => URL.revokeObjectURL(a.url)); archivosMemoria = []; galeria.innerHTML = '';
                 previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height);
-                indicadorRecorte.style.display = 'none'; resultadoCrm.style.display = 'none'; activeInputId = null;
-                document.getElementById('seccion-constitutivo').style.display = 'none';
-                
-                // Limpiar inputs de seriales extras
-                const serialesCont = document.getElementById('seriales-container');
-                while (serialesCont.children.length > 1) { serialesCont.removeChild(serialesCont.lastChild); }
+                indicadorRecorte.style.display = 'none'; resultadoCrm.style.display = 'none'; activeInputId = null; document.getElementById('seccion-constitutivo').style.display = 'none';
+                const serialesCont = document.getElementById('seriales-container'); while (serialesCont.children.length > 1) { serialesCont.removeChild(serialesCont.lastChild); }
             }
         });
 
-        // Controles Canvas y Recorte
         function aplicarZoom() {
             if (baseCanvasWidth === 0) return;
             canvasContainer.style.width = (baseCanvasWidth * zoomActual) + 'px'; canvasContainer.style.height = (baseCanvasHeight * zoomActual) + 'px';
         }
-        function cambiarZoom(incremento) {
-            zoomActual += incremento; if (zoomActual < 0.2) zoomActual = 0.2; if (zoomActual > 5) zoomActual = 5; aplicarZoom();
-        }
-        function resetZoom() {
-            const wrapWidth = previewWrapper.clientWidth - 40; const fitZoom = wrapWidth / baseCanvasWidth; zoomActual = fitZoom < 1 ? fitZoom : 1; aplicarZoom();
-        }
+        function cambiarZoom(incremento) { zoomActual += incremento; if (zoomActual < 0.2) zoomActual = 0.2; if (zoomActual > 5) zoomActual = 5; aplicarZoom(); }
+        function resetZoom() { const wrapWidth = previewWrapper.clientWidth - 40; const fitZoom = wrapWidth / baseCanvasWidth; zoomActual = fitZoom < 1 ? fitZoom : 1; aplicarZoom(); }
 
         canvasContainer.addEventListener('mousedown', (e) => {
             if (!activeInputId) { alert("Haz clic en la casilla del formulario donde quieres guardar el dato primero."); return; }
@@ -788,7 +788,6 @@
                 }
                 if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
                 
-                // Formateo de fechas para constitutivo
                 if(activeInputId === 'const_fecha') {
                     const matchF = textoExtraido.match(/\d{2}[\/\-]\d{2}[\/\-]\d{4}/);
                     if(matchF) textoExtraido = matchF[0].replace(/\-/g, '/');
@@ -798,7 +797,6 @@
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; }
         }
 
-        // --- MANEJO DE ARCHIVOS Y OCR AUTOMÁTICO ---
         fileInput.addEventListener('change', (e) => { Array.from(e.target.files).forEach(agregarArchivo); fileInput.value = ''; });
         zonaArrastre.addEventListener('dragover', (e) => { e.preventDefault(); overlay.classList.add('dragover'); });
         zonaArrastre.addEventListener('dragleave', () => { overlay.classList.remove('dragover'); });
@@ -807,10 +805,7 @@
 
         function agregarArchivo(file) {
             const urlTemporal = URL.createObjectURL(file); const id = Date.now() + Math.random();
-            preRenderizarArchivo(file, urlTemporal).then((renderedUrl) => {
-                archivosMemoria.push({ id, file: file, url: urlTemporal, renderedUrl: renderedUrl });
-                mostrarArchivo(id);
-            });
+            preRenderizarArchivo(file, urlTemporal).then((renderedUrl) => { archivosMemoria.push({ id, file: file, url: urlTemporal, renderedUrl: renderedUrl }); mostrarArchivo(id); });
             overlay.style.display = 'none'; previewContainer.style.display = 'flex'; zoomControls.style.display = 'flex';
             
             const wrapper = document.createElement('div'); wrapper.className = 'galeria-item'; wrapper.dataset.id = id;
@@ -825,10 +820,7 @@
                 if (this.value !== "") {
                     this.classList.remove('pendiente');
                     if (this.value === 'RIF' || this.value === 'CORREO' || this.value === 'BANCO' || this.value === 'CEDULA' || this.value === 'CONSTITUTIVO') {
-                        const checkExist = setInterval(() => {
-                            const checkArchivo = archivosMemoria.find(a => a.id === id);
-                            if (checkArchivo) { clearInterval(checkExist); ejecutarOCRAuto(checkArchivo.renderedUrl, this.value); }
-                        }, 200);
+                        const checkExist = setInterval(() => { const checkArchivo = archivosMemoria.find(a => a.id === id); if (checkArchivo) { clearInterval(checkExist); ejecutarOCRAuto(checkArchivo.renderedUrl, this.value); } }, 200);
                     }
                 } else { this.classList.add('pendiente'); }
             };
@@ -889,7 +881,6 @@
             const index = archivosMemoria.findIndex(a => a.id === id);
             if (index > -1) { URL.revokeObjectURL(archivosMemoria[index].url); archivosMemoria.splice(index, 1); }
             const item = document.querySelector(`.galeria-item[data-id="${id}"]`); if (item) item.remove();
-            
             if (archivosMemoria.length === 0) {
                 previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none';
                 zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height); activeInputId = null;
@@ -909,7 +900,6 @@
                     if (matchNumero) document.getElementById('const_numero').value = matchNumero[1];
                     const matchExp = textoUpper.match(/EXPEDIENTE[\s:]+([A-Z0-9\-]+)/);
                     if (matchExp) document.getElementById('const_expediente').value = matchExp[1];
-                    
                     const matchFecha = textoPlano.match(/\d{2}[\/\-]\d{2}[\/\-]\d{4}/);
                     if (matchFecha) document.getElementById('const_fecha').value = matchFecha[0].replace(/\-/g, '/');
                 }
@@ -952,7 +942,6 @@
                 if (tipoDoc === 'RIF') {
                     const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     const listaFirmas = document.getElementById('lista-firmas'); 
-                    const inputComercio = document.getElementById('comercio');
                     listaFirmas.innerHTML = ''; let arrayFirmas = [];
                     
                     const matchCondicion = textoPlano.match(/Condici[oó]n:([^\n]+)/i);
@@ -974,7 +963,6 @@
                             const matchRif = linea.match(/[JGVE]-?\d{8,9}/i);
                             if (matchRif) {
                                 document.getElementById('rif').value = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
-                                // Disparar evento para mostrar Doc Constitutivo si es J/G
                                 document.getElementById('rif').dispatchEvent(new Event('input'));
                                 
                                 let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
@@ -1021,7 +1009,7 @@
                     if (arrayFirmas.length > 0) {
                         let firmasUnicas = [...new Set(arrayFirmas)];
                         firmasUnicas.forEach(firma => { let option = document.createElement('option'); option.value = firma; listaFirmas.appendChild(option); });
-                        if (firmasUnicas.length > 1) { inputComercio.value = ""; inputComercio.placeholder = "👇 Haz clic aquí para elegir la firma..."; } else { inputComercio.value = firmasUnicas[0]; }
+                        if (firmasUnicas.length > 1) { document.getElementById('comercio').value = ""; document.getElementById('comercio').placeholder = "👇 Haz clic aquí para elegir la firma..."; } else { document.getElementById('comercio').value = firmasUnicas[0]; }
                     }
 
                     const valRif = document.getElementById('rif').value.toUpperCase();
@@ -1034,22 +1022,17 @@
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; btnProcesar.disabled = false; }
         }
 
-        // --- SISTEMA DE VALIDACIÓN Y ENVÍO DE SOLICITUDES ---
         btnProcesar.addEventListener('click', async (e) => {
             e.preventDefault();
             
             document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
-            
-            let rifInput = document.getElementById('rif');
-            rifInput.value = rifInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            let rifInput = document.getElementById('rif'); rifInput.value = rifInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
             
             let errores = [];
             if (!/^[JGVE]\d{8,9}$/.test(rifInput.value)) { rifInput.classList.add('input-error'); errores.push("RIF inválido."); }
             if (!/^(\d{8}|[JGVE]0\d{11,14}|PENDIENTE)$/i.test(document.getElementById('afiliado').value)) { document.getElementById('afiliado').classList.add('input-error'); errores.push("Afiliado inválido."); }
             
-            // Validar todos los seriales agregados
-            const inputsSeriales = document.querySelectorAll('.serial-input');
-            const arrSeriales = [];
+            const inputsSeriales = document.querySelectorAll('.serial-input'); const arrSeriales = [];
             inputsSeriales.forEach(si => {
                 let v = si.value.replace(/\s/g, '').toUpperCase();
                 if(v !== "") {
@@ -1065,8 +1048,7 @@
 
             if (errores.length > 0) { alert("⚠️ ERRORES EN LA SOLICITUD:\n\n- " + errores.join("\n- ")); return; }
 
-            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos...";
-            btnProcesar.style.backgroundColor = "#ffc107"; btnProcesar.style.color = "#000"; btnProcesar.disabled = true;
+            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos..."; btnProcesar.style.backgroundColor = "#ffc107"; btnProcesar.style.color = "#000"; btnProcesar.disabled = true;
 
             const filePromises = archivosMemoria.map(a => {
                 return new Promise((resolve, reject) => {
@@ -1078,34 +1060,21 @@
             const archivosBase64 = await Promise.all(filePromises);
 
             const datosParaGuardar = {
-                accion: "guardar",
-                usuario_actual: SESSION.usuario,
-                comercio: document.getElementById('comercio').value,
-                direccion: document.getElementById('direccion').value,
-                rif: document.getElementById('rif').value,
-                contribuyente: document.getElementById('contribuyente').value,
-                contacto_nombre: document.getElementById('contacto_nombre').value,
-                contacto_cedula: document.getElementById('contacto_cedula').value,
-                afiliado: document.getElementById('afiliado').value,
-                telefono: document.getElementById('telefono').value,
-                correo: document.getElementById('correo').value.trim(),
-                seriales: arrSeriales, // ENVIAMOS ARREGLO DE SERIALES
-                actividad: document.getElementById('actividad').value,
-                cuenta: document.getElementById('cuenta').value,
-                banco: document.getElementById('banco').value,
-                modelo: document.getElementById('modelo').value,
-                comunicacion: document.getElementById('comunicacion').value,
-                operadora: document.getElementById('operadora').value,
-                // Datos del constitutivo (pueden ir vacíos si es persona natural)
-                const_circ: document.getElementById('const_circ').value,
-                const_fecha: document.getElementById('const_fecha').value,
-                const_tomo: document.getElementById('const_tomo').value,
-                const_numero: document.getElementById('const_numero').value,
-                const_expediente: document.getElementById('const_expediente').value,
-                archivos: archivosBase64
+                accion: "guardar", usuario_actual: SESSION.usuario, comercio: document.getElementById('comercio').value,
+                direccion: document.getElementById('direccion').value, rif: document.getElementById('rif').value,
+                contribuyente: document.getElementById('contribuyente').value, contacto_nombre: document.getElementById('contacto_nombre').value,
+                contacto_cedula: document.getElementById('contacto_cedula').value, afiliado: document.getElementById('afiliado').value,
+                telefono: document.getElementById('telefono').value, correo: document.getElementById('correo').value.trim(),
+                seriales: arrSeriales, actividad: document.getElementById('actividad').value, cuenta: document.getElementById('cuenta').value,
+                banco: document.getElementById('banco').value, modelo: document.getElementById('modelo').value,
+                comunicacion: document.getElementById('comunicacion').value, operadora: document.getElementById('operadora').value,
+                const_circ: document.getElementById('const_circ').value, const_fecha: document.getElementById('const_fecha').value,
+                const_tomo: document.getElementById('const_tomo').value, const_numero: document.getElementById('const_numero').value,
+                const_expediente: document.getElementById('const_expediente').value, archivos: archivosBase64
             };
 
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(datosParaGuardar) });
                 const resultado = await response.json();
                 
@@ -1115,44 +1084,22 @@
                     const numeroRif = datosParaGuardar.rif.substring(1); 
                     
                     let txtConst = "";
-                    if(tipoPersona === 'JURÍDICA') {
-                        txtConst = `Documento Constitutivo: ${datosParaGuardar.const_circ} | Fecha: ${datosParaGuardar.const_fecha} | Tomo: ${datosParaGuardar.const_tomo} | Nro: ${datosParaGuardar.const_numero} | Exp: ${datosParaGuardar.const_expediente}\n`;
-                    }
+                    if(tipoPersona === 'JURÍDICA') { txtConst = `Documento Constitutivo: ${datosParaGuardar.const_circ} | Fecha: ${datosParaGuardar.const_fecha} | Tomo: ${datosParaGuardar.const_tomo} | Nro: ${datosParaGuardar.const_numero} | Exp: ${datosParaGuardar.const_expediente}\n`; }
 
-                    let textoCrm = `--- INFORMACIÓN DE COMERCIO (${tipoPersona}) ---\n` +
-                                   `Tipo Persona: ${tipoPersona === 'NATURAL' ? 'Natural' : 'Jurídica'}\n` +
-                                   `Tipo: ${prefijoRif} | Nro. Documento RIF: ${numeroRif}\n`;
-                    
-                    if (tipoPersona === 'NATURAL') {
-                        textoCrm += `Cédula de Contacto: ${datosParaGuardar.contacto_cedula}\n` +
-                                    `Nombres y Apellidos / Firma: ${datosParaGuardar.comercio}\n`;
-                    } else {
-                        textoCrm += `Razón Social: ${datosParaGuardar.comercio}\n` +
-                                    `Razón Comercial: ${datosParaGuardar.comercio}\n` +
-                                    `Representante / Contacto: ${datosParaGuardar.contacto_nombre} (C.I: ${datosParaGuardar.contacto_cedula})\n`;
-                    }
-
-                    textoCrm += `Correo: ${datosParaGuardar.correo}\n` +
-                                `Teléfono: ${datosParaGuardar.telefono}\n` +
-                                `Contribuyente Especial: ${datosParaGuardar.contribuyente}\n` +
-                                `Actividad Comercial: ${datosParaGuardar.actividad}\n` + txtConst +
-                                `------------------------------------------\n` +
-                                `Afiliado: ${datosParaGuardar.afiliado} | Banco: ${datosParaGuardar.banco} | Cuenta: ${datosParaGuardar.cuenta} | POS: ${datosParaGuardar.modelo}\n` +
-                                `Seriales Solicitados: ${datosParaGuardar.seriales.join(', ')}`;
+                    let textoCrm = `--- INFORMACIÓN DE COMERCIO (${tipoPersona}) ---\nTipo Persona: ${tipoPersona === 'NATURAL' ? 'Natural' : 'Jurídica'}\nTipo: ${prefijoRif} | Nro. Documento RIF: ${numeroRif}\n`;
+                    if (tipoPersona === 'NATURAL') { textoCrm += `Cédula de Contacto: ${datosParaGuardar.contacto_cedula}\nNombres y Apellidos / Firma: ${datosParaGuardar.comercio}\n`; } 
+                    else { textoCrm += `Razón Social: ${datosParaGuardar.comercio}\nRazón Comercial: ${datosParaGuardar.comercio}\nRepresentante / Contacto: ${datosParaGuardar.contacto_nombre} (C.I: ${datosParaGuardar.contacto_cedula})\n`; }
+                    textoCrm += `Correo: ${datosParaGuardar.correo}\nTeléfono: ${datosParaGuardar.telefono}\nContribuyente Especial: ${datosParaGuardar.contribuyente}\nActividad Comercial: ${datosParaGuardar.actividad}\n` + txtConst + `------------------------------------------\nAfiliado: ${datosParaGuardar.afiliado} | Banco: ${datosParaGuardar.banco} | Cuenta: ${datosParaGuardar.cuenta} | POS: ${datosParaGuardar.modelo}\nSeriales Solicitados: ${datosParaGuardar.seriales.join(', ')}`;
                                 
                     resultadoCrm.style.display = 'block';
                     resultadoCrm.innerHTML = textoCrm.replace(/\n/g, '<br>') + `<br><br>(Copia este texto para tu CRM)<br><br><a id="enlace-drive" href="${resultado.folderUrl}" target="_blank">📁 Abrir Expediente en Google Drive</a>`;
                     
                     form.reset(); document.getElementById('comercio').style.border = "1px solid #ccc";
                     archivosMemoria.forEach(a => URL.revokeObjectURL(a.url)); archivosMemoria = []; galeria.innerHTML = '';
-                    previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height); activeInputId = null;
-                    document.getElementById('seccion-constitutivo').style.display = 'none';
-                    const serialesCont = document.getElementById('seriales-container');
-                    while (serialesCont.children.length > 1) { serialesCont.removeChild(serialesCont.lastChild); }
+                    previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height); activeInputId = null; document.getElementById('seccion-constitutivo').style.display = 'none';
+                    const serialesCont = document.getElementById('seriales-container'); while (serialesCont.children.length > 1) { serialesCont.removeChild(serialesCont.lastChild); }
                 } else { alert("Error en el script: " + resultado.mensaje); }
-            } catch (error) { alert("Fallo de conexión. " + error); } finally {
-                btnProcesar.innerText = "Verificar y Generar Expediente"; btnProcesar.style.backgroundColor = "#0d6efd"; btnProcesar.style.color = "white"; btnProcesar.disabled = false;
-            }
+            } catch (error) { alert("Fallo de conexión. " + error); } finally { btnProcesar.innerText = "Verificar y Generar Expediente"; btnProcesar.style.backgroundColor = "#0d6efd"; btnProcesar.style.color = "white"; btnProcesar.disabled = false; }
         });
     </script>
 </body>
