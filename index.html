@@ -31,11 +31,9 @@
         .visor { flex: 1; border-right: 2px solid #ccc; display: flex; flex-direction: column; background: #e9ecef; position: relative; overflow: hidden;}
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         
-        .toolbar { background: #dee2e6; padding: 10px 20px; display: flex; align-items: center; border-bottom: 2px solid #ccc; z-index: 20;}
-        .btn-agregar { background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.9rem; margin-right: 15px;}
+        .toolbar { background: #dee2e6; padding: 10px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #ccc; z-index: 20;}
+        .btn-agregar { background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.9rem;}
         .toolbar-info { font-size: 0.85rem; color: #495057; }
-        
-        .ocr-toggle { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 0.85rem; color: #495057; cursor: pointer; background: #e9ecef; padding: 5px 10px; border-radius: 5px; border: 1px solid #ced4da;}
 
         #drop-zone-overlay { flex: 1; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 1.1rem; text-align: center; padding: 20px;}
         #preview-container { flex: 1; display: none; flex-direction: column; height: 100%; position: relative;}
@@ -82,9 +80,12 @@
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
         th { background-color: #e9ecef; color: #495057; }
         .fila-pendiente { background-color: #fff3cd !important; }
-        .btn-tabla { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-right: 5px;}
-        .btn-editar { background: #ffc107; color: #000; }
-        .btn-eliminar-registro { background: #dc3545; color: white; }
+        
+        .btn-tabla { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem; margin-right: 5px; transition: 0.2s;}
+        .btn-editar { background: #ffc107; color: #000; border: 1px solid #d39e00;}
+        .btn-editar:hover { background: #e0a800; }
+        .btn-eliminar-registro { background: #dc3545; color: white; border: 1px solid #b02a37;}
+        .btn-eliminar-registro:hover { background: #c82333; }
 
         #modal-edicion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center;}
         .modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px;}
@@ -98,6 +99,7 @@
 </head>
 <body>
 
+    <!-- PANTALLA DE LOGIN -->
     <div id="login-screen">
         <div class="login-box">
             <h2>Acceso al Sistema</h2>
@@ -110,6 +112,7 @@
         </div>
     </div>
 
+    <!-- NAVBAR PRINCIPAL -->
     <div class="navbar" id="navbar" style="display: none;">
         <div class="nav-brand">Gestor POS Integrado</div>
         <div class="nav-menu">
@@ -123,16 +126,14 @@
 
     <div id="app-container" style="display: none;">
         
+        <!-- ==========================================
+             VISTA 1: CARGA DE INSTALACIONES
+             ========================================== -->
         <div id="vista-carga" class="vista active">
             <div class="visor" id="zona-arrastre">
                 <div class="toolbar">
                     <button class="btn-agregar" onclick="document.getElementById('file-input').click()">➕ Agregar Archivo</button>
                     <span class="toolbar-info">Arrastra o pega (Ctrl+V) documentos aquí.</span>
-                    
-                    <!-- NUEVO INTERRUPTOR DE FILTRO OCR -->
-                    <label class="ocr-toggle" title="Activa esto solo si la foto subida es muy oscura y el sistema no lee el texto.">
-                        <input type="checkbox" id="chk-filtro-ocr"> 📸 Mejorar contraste OCR
-                    </label>
                 </div>
                 <input type="file" id="file-input" multiple accept="image/*,application/pdf" style="display: none;">
                 
@@ -167,6 +168,7 @@
                 </div>
 
                 <form id="param-form">
+                    
                     <div class="form-section-title">Datos del RIF</div>
                     <div class="form-group" style="margin-bottom:12px;">
                         <label>Nombre del Comercio / Razón Social</label>
@@ -191,6 +193,7 @@
                         <textarea id="direccion" rows="2" placeholder="Se extraerá del RIF..."></textarea>
                     </div>
 
+                    <!-- MÓDULO CONSTITUTIVO DINÁMICO -->
                     <div id="seccion-constitutivo">
                         <div class="form-section-title" style="margin-top:0;">Datos del Documento Constitutivo (Jurídica)</div>
                         <div class="form-row" style="margin-bottom:12px;">
@@ -342,10 +345,13 @@
             </div>
         </div>
 
+        <!-- ==========================================
+             VISTA 2: CONSULTA DE SOLICITUDES
+             ========================================== -->
         <div id="vista-consulta" class="vista vista-tabla">
             <div class="tabla-contenedor">
                 <h2 style="margin-top: 0; color: #0d6efd;">Gestión de Solicitudes (Instalaciones)</h2>
-                <p style="color: #6c757d; font-size: 0.9rem;">Las filas en amarillo indican que el Afiliado está PENDIENTE.</p>
+                <p style="color: #6c757d; font-size: 0.9rem;">Las filas en amarillo indican que el Afiliado está PENDIENTE. Utiliza los botones de la derecha para Editar o Eliminar cada registro individualmente.</p>
                 <button onclick="cargarSolicitudes()" class="btn-principal" style="width: auto; padding: 8px 15px; margin-bottom: 10px;">↻ Actualizar Tabla</button>
                 
                 <table id="tabla-solicitudes">
@@ -368,10 +374,13 @@
             </div>
         </div>
 
+        <!-- ==========================================
+             VISTA 3: DESINSTALACIONES Y TCRS (PARQUE TOTAL)
+             ========================================== -->
         <div id="vista-tcrs" class="vista vista-tabla">
             <div class="tabla-contenedor tcrs-panel">
                 <h2 style="margin-top: 0; color: #0d6efd;">Desinstalaciones y TCRS</h2>
-                <p style="color: #6c757d; font-size: 0.9rem;">Consulta el serial en el <b>Parque Total</b> más reciente alojado en Drive.</p>
+                <p style="color: #6c757d; font-size: 0.9rem;">Consulta el serial en el <b>Parque Total</b> más reciente alojado en Drive. Si el equipo está activo, podrás procesar su retiro o cambio de titular.</p>
                 
                 <form id="form-consulta-parque">
                     <div class="form-row">
@@ -391,11 +400,13 @@
                     <button type="submit" class="btn-principal" id="btn-consultar-parque" style="width:100%; margin-top:10px;">🔍 Consultar Estatus del Equipo</button>
                 </form>
                 
+                <!-- Resultados del Parque Total -->
                 <div id="tcrs-resultado-box" class="tcrs-resultado-box">
                     <h3 style="margin-top:0; color:#084298;">✅ Equipo Activo Encontrado</h3>
                     <p style="font-size:0.85rem; color:#495057; margin-bottom:10px;">Archivo Leído: <b id="tcrs-archivo-nombre"></b></p>
                     <div id="tcrs-tabla-datos" style="max-height: 250px; overflow-y: auto; background: white; border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;"></div>
                     
+                    <!-- Formulario de Completado para TCRS -->
                     <div class="tcrs-form-box">
                         <h4 style="margin-top:0; color:#dc3545;">Procesar Solicitud con estos datos</h4>
                         <form id="form-guardar-tcrs">
@@ -474,7 +485,7 @@
         let INFO_PARQUE_ACTUAL = null;
         let BANCO_PARQUE_ACTUAL = "";
 
-        // --- SISTEMA DE LOGIN ---
+        // --- SISTEMA DE LOGIN (SIN HEADERS CORS) ---
         document.getElementById('form-login').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-login');
@@ -488,6 +499,7 @@
             };
 
             try {
+                // FETCH LIMPIO SIN HEADERS CORS
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if(data.status === "exito") {
@@ -526,6 +538,7 @@
             const payload = { accion: "consultar_parque", serial: document.getElementById('tcrs-serial-buscar').value.trim().toUpperCase(), banco: document.getElementById('tcrs-banco-buscar').value };
 
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 
@@ -573,6 +586,7 @@
             };
 
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if (data.status === "exito") {
@@ -591,6 +605,7 @@
             const tbody = document.getElementById('tbody-solicitudes');
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Cargando información... ⏳</td></tr>';
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ accion: "leer", usuario_actual: SESSION.usuario, rol: SESSION.rol }) });
                 const data = await response.json();
                 
@@ -618,6 +633,7 @@
         async function eliminarRegistro(idUnico) {
             if(!confirm("¿Estás seguro de que deseas ELIMINAR esta solicitud?")) return;
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ accion: "eliminar", id_registro: idUnico }) });
                 const data = await response.json();
                 if(data.status === "exito") { alert("Registro eliminado exitosamente."); cargarSolicitudes(); } 
@@ -641,6 +657,7 @@
                 afiliado: document.getElementById('edit_afiliado').value, serial: document.getElementById('edit_serial').value
             };
             try {
+                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if(data.status === "exito") { document.getElementById('modal-edicion').style.display = 'none'; cargarSolicitudes(); } 
@@ -749,27 +766,10 @@
             extraerTextoDeRecorte(Math.min(startX, e.offsetX) * ratioX, Math.min(startY, e.offsetY) * ratioY, cropW, cropH);
         });
 
-        // Aplicamos un pequeño filtro OCR opcional en una función separada
-        function aplicarFiltroOpcional(canvasBase, w, h) {
-            const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h;
-            const ctxTmp = tmp.getContext('2d');
-            if (document.getElementById('chk-filtro-ocr').checked) {
-                ctxTmp.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
-            }
-            ctxTmp.drawImage(canvasBase, 0, 0, w, h);
-            return tmp.toDataURL('image/png');
-        }
-
         async function extraerTextoDeRecorte(x, y, w, h) {
             ocrLoading.style.display = 'block'; ocrLoading.innerText = "Extrayendo recorte... ✂️";
             const tempCanvas = document.createElement('canvas'); tempCanvas.width = w; tempCanvas.height = h;
             const tempCtx = tempCanvas.getContext('2d');
-            
-            // Aplicar el filtro si está activo en el checkbox
-            if(document.getElementById('chk-filtro-ocr').checked) {
-                tempCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
-            }
-            
             tempCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
             
             try {
@@ -781,6 +781,7 @@
                 if(activeInputId === 'cuenta') { textoExtraido = textoExtraido.replace(/\D/g, ''); evaluarBanco(textoExtraido); }
                 if(activeInputId === 'telefono') textoExtraido = textoExtraido.replace(/[^\d\-\s]/g, '');
                 if(activeInputId === 'contacto_cedula') textoExtraido = textoExtraido.replace(/\D/g, ''); 
+                
                 if(activeInputId.startsWith('serial')) {
                     textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase().replace(/(ASIGNADO|POSVENTA)/g, '');
                     if(!/\d/.test(textoExtraido) && textoExtraido !== "") { alert("⚠️ Advertencia: El serial extraído no contiene números."); }
@@ -793,19 +794,47 @@
                 }
 
                 if (textoExtraido) { document.getElementById(activeInputId).value = textoExtraido; }
+
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; }
         }
 
+        function evaluarBanco(numeroCuenta) {
+            if (numeroCuenta.length >= 4) {
+                const prefijo = numeroCuenta.substring(0, 4);
+                const selectBanco = document.getElementById('banco');
+                for (let option of selectBanco.options) {
+                    if (option.getAttribute('data-pref') === prefijo) { selectBanco.value = option.value; break; }
+                }
+            }
+        }
+
+        // --- MANEJO DE ARCHIVOS ---
         fileInput.addEventListener('change', (e) => { Array.from(e.target.files).forEach(agregarArchivo); fileInput.value = ''; });
         zonaArrastre.addEventListener('dragover', (e) => { e.preventDefault(); overlay.classList.add('dragover'); });
         zonaArrastre.addEventListener('dragleave', () => { overlay.classList.remove('dragover'); });
-        zonaArrastre.addEventListener('drop', (e) => { e.preventDefault(); overlay.classList.remove('dragover'); if (e.dataTransfer.files.length > 0) Array.from(e.dataTransfer.files).forEach(agregarArchivo); });
-        document.addEventListener('paste', (e) => { const items = (e.clipboardData || e.originalEvent.clipboardData).items; for (let index in items) { if (items[index].kind === 'file') agregarArchivo(items[index].getAsFile()); } });
+        zonaArrastre.addEventListener('drop', (e) => {
+            e.preventDefault(); overlay.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) Array.from(e.dataTransfer.files).forEach(agregarArchivo);
+        });
+        document.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file') agregarArchivo(item.getAsFile());
+            }
+        });
 
         function agregarArchivo(file) {
             const urlTemporal = URL.createObjectURL(file); const id = Date.now() + Math.random();
-            preRenderizarArchivo(file, urlTemporal).then((renderedUrl) => { archivosMemoria.push({ id, file: file, url: urlTemporal, renderedUrl: renderedUrl }); mostrarArchivo(id); });
-            overlay.style.display = 'none'; previewContainer.style.display = 'flex'; zoomControls.style.display = 'flex';
+            
+            preRenderizarArchivo(file, urlTemporal).then((renderedUrl) => {
+                archivosMemoria.push({ id, file: file, url: urlTemporal, renderedUrl: renderedUrl });
+                mostrarArchivo(id);
+            });
+            
+            overlay.style.display = 'none'; 
+            previewContainer.style.display = 'flex';
+            zoomControls.style.display = 'flex';
             
             const wrapper = document.createElement('div'); wrapper.className = 'galeria-item'; wrapper.dataset.id = id;
             const thumb = document.createElement(file.type.startsWith('image/') ? 'img' : 'div'); thumb.className = 'thumb';
@@ -819,7 +848,10 @@
                 if (this.value !== "") {
                     this.classList.remove('pendiente');
                     if (this.value === 'RIF' || this.value === 'CORREO' || this.value === 'BANCO' || this.value === 'CEDULA' || this.value === 'CONSTITUTIVO') {
-                        const checkExist = setInterval(() => { const checkArchivo = archivosMemoria.find(a => a.id === id); if (checkArchivo) { clearInterval(checkExist); ejecutarOCRAuto(checkArchivo.renderedUrl, this.value); } }, 200);
+                        const checkExist = setInterval(() => {
+                            const checkArchivo = archivosMemoria.find(a => a.id === id);
+                            if (checkArchivo) { clearInterval(checkExist); ejecutarOCRAuto(checkArchivo.renderedUrl, this.value); }
+                        }, 200);
                     }
                 } else { this.classList.add('pendiente'); }
             };
@@ -832,7 +864,7 @@
         function preRenderizarArchivo(file, urlTemporal) {
             return new Promise((resolve) => {
                 if (file.type.startsWith('image/')) {
-                    resolve(urlTemporal); // Enviamos el archivo puro sin filtros visuales!
+                    resolve(urlTemporal); 
                 } else if (file.type === 'application/pdf') {
                     ocrLoading.style.display = 'block'; ocrLoading.innerText = "Procesando PDF... 📄";
                     const fileReader = new FileReader();
@@ -881,20 +913,7 @@
         async function ejecutarOCRAuto(imagenOSource, tipoDoc) {
             ocrLoading.style.display = 'block'; ocrLoading.innerText = "Extrayendo Datos... 🔍"; btnProcesar.disabled = true;
             try {
-                // Si el toggle está activado, aplicamos filtro antes del OCR general
-                let imgProcesada = imagenOSource;
-                if(document.getElementById('chk-filtro-ocr').checked) {
-                    const imgT = new Image();
-                    imgProcesada = await new Promise(r => {
-                        imgT.onload = () => {
-                            const c = document.createElement('canvas'); c.width = imgT.width; c.height = imgT.height;
-                            const ctxC = c.getContext('2d'); ctxC.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
-                            ctxC.drawImage(imgT, 0, 0); r(c.toDataURL('image/jpeg'));
-                        }; imgT.src = imagenOSource;
-                    });
-                }
-
-                const result = await Tesseract.recognize(imgProcesada, 'spa');
+                const result = await Tesseract.recognize(imagenOSource, 'spa');
                 const textoPlano = result.data.text; const textoUpper = textoPlano.toUpperCase();
                 
                 if (tipoDoc === 'CONSTITUTIVO') {
@@ -909,18 +928,21 @@
                 }
 
                 if (tipoDoc === 'CEDULA') {
-                    const matchCedula = textoPlano.replace(/\s+/g, '').match(/(?:V|E)?[-]?(\d{6,8})/i);
+                    const textoSinEspacios = textoPlano.replace(/\s+/g, '');
+                    const matchCedula = textoSinEspacios.match(/(?:V|E)?[-]?(\d{6,8})/i);
                     if (matchCedula) document.getElementById('contacto_cedula').value = matchCedula[1];
                 }
 
                 if (tipoDoc === 'BANCO' || tipoDoc === 'CORREO') {
-                    const matchCuenta = textoPlano.replace(/\s+/g, '').match(/(?:01\d{2})\d{16}/);
+                    // LIMPIEZA PROFUNDA DE LA CUENTA PARA IGNORAR GUIONES Y ESPACIOS
+                    const textoParaCuenta = textoPlano.replace(/[\s\-\.]/g, '');
+                    const matchCuenta = textoParaCuenta.match(/01\d{18}/);
                     if (matchCuenta) { document.getElementById('cuenta').value = matchCuenta[0]; evaluarBanco(matchCuenta[0]); }
                 }
 
                 if (tipoDoc === 'CORREO') {
                     const textoSinEspacios = textoPlano.replace(/\s+/g, '');
-                    const matchCorreo = textoSinEspacios.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+                    const matchCorreo = textoSinEspacios.replace(/(?:\(a\)|\[a\]|\{a\}|©|®|&)/g, '@').match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
                     if (matchCorreo) document.getElementById('correo').value = matchCorreo[0].toLowerCase();
 
                     const matchTelefono = textoSinEspacios.match(/(?:0414|0424|0412|0416|0426|02\d{2})\d{7}/);
@@ -1026,15 +1048,25 @@
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; btnProcesar.disabled = false; }
         }
 
-        btnProcesar.addEventListener('click', async (e) => {
-            e.preventDefault();
-            
+        function validarDatos() {
             document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
-            let rifInput = document.getElementById('rif'); rifInput.value = rifInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            
+            let rifInput = document.getElementById('rif');
+            rifInput.value = rifInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            
+            // LIMPIEZA DE GUIONES EN LA CUENTA ANTES DE VALIDAR
+            let cuentaInput = document.getElementById('cuenta');
+            cuentaInput.value = cuentaInput.value.replace(/\D/g, '');
+            
+            const regexRif = /^[JGVE]\d{8,9}$/;
+            const regexAfiliado = /^(\d{8}|[JGVE]0\d{11,14}|PENDIENTE)$/i;
+            const regexCuenta = /^01\d{18}$/;
+            const regexTelefono = /^0[1-9]\d{9}$/; 
+            const regexCorreo = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
             
             let errores = [];
-            if (!/^[JGVE]\d{8,9}$/.test(rifInput.value)) { rifInput.classList.add('input-error'); errores.push("RIF inválido."); }
-            if (!/^(\d{8}|[JGVE]0\d{11,14}|PENDIENTE)$/i.test(document.getElementById('afiliado').value)) { document.getElementById('afiliado').classList.add('input-error'); errores.push("Afiliado inválido."); }
+            if (!regexRif.test(rifInput.value)) { rifInput.classList.add('input-error'); errores.push("RIF inválido."); }
+            if (!regexAfiliado.test(document.getElementById('afiliado').value)) { document.getElementById('afiliado').classList.add('input-error'); errores.push("Afiliado inválido."); }
             
             const inputsSeriales = document.querySelectorAll('.serial-input'); const arrSeriales = [];
             inputsSeriales.forEach(si => {
@@ -1046,13 +1078,20 @@
             });
             if(arrSeriales.length === 0) { document.querySelector('.serial-input').classList.add('input-error'); errores.push("Debes ingresar al menos un serial válido."); }
 
-            if (!/^01\d{18}$/.test(document.getElementById('cuenta').value)) { document.getElementById('cuenta').classList.add('input-error'); errores.push("Cuenta Bancaria inválida."); }
-            if (!/^0[1-9]\d{9}$/.test(document.getElementById('telefono').value.replace(/\D/g, ''))) { document.getElementById('telefono').classList.add('input-error'); errores.push("Teléfono inválido."); }
-            if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(document.getElementById('correo').value.trim())) { document.getElementById('correo').classList.add('input-error'); errores.push("Correo electrónico inválido."); }
+            if (!regexCuenta.test(cuentaInput.value)) { cuentaInput.classList.add('input-error'); errores.push("Cuenta Bancaria inválida (Debe tener 20 dígitos)."); }
+            if (!regexTelefono.test(document.getElementById('telefono').value.replace(/\D/g, ''))) { document.getElementById('telefono').classList.add('input-error'); errores.push("Teléfono inválido."); }
+            if (!regexCorreo.test(document.getElementById('correo').value.trim())) { document.getElementById('correo').classList.add('input-error'); errores.push("Correo electrónico inválido."); }
 
-            if (errores.length > 0) { alert("⚠️ ERRORES EN LA SOLICITUD:\n\n- " + errores.join("\n- ")); return; }
+            if (errores.length > 0) { alert("⚠️ ERRORES EN LA SOLICITUD:\n\n- " + errores.join("\n- ")); return false; }
+            return true;
+        }
 
-            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos..."; btnProcesar.style.backgroundColor = "#ffc107"; btnProcesar.style.color = "#000"; btnProcesar.disabled = true;
+        btnProcesar.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!validarDatos()) return;
+
+            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos...";
+            btnProcesar.style.backgroundColor = "#ffc107"; btnProcesar.style.color = "#000"; btnProcesar.disabled = true;
 
             const filePromises = archivosMemoria.map(a => {
                 return new Promise((resolve, reject) => {
@@ -1062,6 +1101,12 @@
                 });
             });
             const archivosBase64 = await Promise.all(filePromises);
+            
+            const inputsSeriales = document.querySelectorAll('.serial-input'); const arrSeriales = [];
+            inputsSeriales.forEach(si => {
+                let v = si.value.replace(/\s/g, '').toUpperCase();
+                if(v !== "") arrSeriales.push(v);
+            });
 
             const datosParaGuardar = {
                 accion: "guardar", usuario_actual: SESSION.usuario, comercio: document.getElementById('comercio').value,
@@ -1078,6 +1123,7 @@
             };
 
             try {
+                // FETCH LIMPIO SIN HEADERS
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(datosParaGuardar) });
                 const resultado = await response.json();
                 
