@@ -45,21 +45,19 @@
         #preview-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
         #selection-box { position: absolute; border: 2px dashed #0d6efd; background: rgba(13, 110, 253, 0.2); pointer-events: none; display: none; z-index: 10;}
         
-        /* BARRAS Y CONTROLES MAP-STYLE + PAGINACIÓN PDF */
         .map-zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 50; }
         .btn-map-zoom { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.75); border: 1px solid rgba(0,0,0,0.2); border-radius: 8px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: background 0.2s;}
         .btn-map-zoom:hover { background: rgba(255, 255, 255, 1); }
 
         #pdf-controls { display: none; flex-direction: column; gap: 5px; align-items: center; background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.2); border-radius: 8px; padding: 5px; margin-bottom: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
         #pdf-page-indicator { font-size: 0.8rem; font-weight: bold; color: #0d6efd; }
-        .pdf-nav-btn { width: 30px; height: 30px; background: #e9ecef; border: 1px solid #ccc; border-radius: 5px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
-        .pdf-nav-btn:hover { background: #dee2e6; }
-
+        .pdf-nav-btn { width: 30px; height: 30px; background: #e9ecef; border: 1px solid #ccc; border-radius: 5px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;}
+        
         #ocr-loading { display: none; position: absolute; top: 20px; right: 20px; background: #ffc107; color: #000; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 60;}
         
         .galeria { height: 110px; flex-shrink: 0; display: flex; gap: 15px; padding: 15px 10px; overflow-x: auto; overflow-y: hidden; background: #f8f9fa; border-top: 1px solid #ccc; z-index: 20;}
         .galeria-item { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 80px;}
-        .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff; transition: 0.2s;}
+        .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff;}
         .thumb.active { border-color: #0d6efd; transform: scale(1.05);}
         .thumb.pdf-icon { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: #dc3545; background: #fff;}
         .doc-tipo { font-size: 0.7rem; padding: 2px; border-radius: 3px; border: 1px solid #0d6efd; width: 100%; text-align: center; margin-top: 5px;}
@@ -81,28 +79,26 @@
         #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;}
 
         .vista-tabla { flex-direction: column; padding: 20px; background: #f8f9fa; overflow-y: auto; align-items: center;}
-        .tabla-contenedor { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; width: 100%; max-width: 1200px;}
+        .tabla-contenedor { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; width: 100%; max-width: 1300px;}
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem;}
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
         th { background-color: #e9ecef; color: #495057; }
         .fila-pendiente { background-color: #fff3cd !important; }
+        .acciones-col { white-space: nowrap; text-align: center; } /* EVITA QUE LOS BOTONES SE DIVIDAN EN MÚLTIPLES LÍNEAS */
         
         .btn-tabla { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem; margin-right: 5px; transition: 0.2s;}
-        .btn-editar { background: #ffc107; color: #000; border: 1px solid #d39e00;}
-        .btn-editar:hover { background: #e0a800; }
+        .btn-editar { background: #0d6efd; color: #fff; border: 1px solid #0a58ca;}
+        .btn-editar:hover { background: #0b5ed7; }
         .btn-eliminar-registro { background: #dc3545; color: white; border: 1px solid #b02a37;}
         .btn-eliminar-registro:hover { background: #c82333; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center;}
-        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px; max-width: 90%; max-height: 90vh; overflow-y: auto;}
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 700px; max-width: 95%; max-height: 90vh; overflow-y: auto;}
         .modal-content h3 { margin-top: 0; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 10px;}
         
-        /* ESTILOS DEL DETALLE */
-        .detalle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;}
-        .detalle-item { background: #f8f9fa; padding: 8px; border-radius: 5px; border: 1px solid #eee;}
-        .detalle-item span { display: block; font-size: 0.7rem; color: #6c757d; font-weight: bold; text-transform: uppercase;}
-        .detalle-item div { font-weight: bold; color: #212529;}
-
+        /* ESTILOS DEL DETALLE Y EDICIÓN (UNIFICADOS) */
+        .detalle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.9rem;}
+        
         .tcrs-panel { max-width: 800px; margin: 0 auto;}
         .tcrs-resultado-box { background: #e8f0fe; padding: 20px; border-radius: 8px; border: 1px solid #b6d4fe; margin-top: 20px; display: none;}
         .tcrs-form-box { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ccc; margin-top: 15px;}
@@ -363,7 +359,7 @@
                         <button id="btn-validar-masivo" class="btn-principal" style="background:#198754; display:none; margin-left:10px;" onclick="validarSeleccionadas()">✔️ Validar Seleccionadas</button>
                     </div>
                 </div>
-                <p style="color: #6c757d; font-size: 0.9rem;">Las filas en amarillo indican que el Afiliado está PENDIENTE. Los supervisores pueden validar solicitudes habilitadas.</p>
+                <p style="color: #6c757d; font-size: 0.9rem;">Las filas en amarillo indican que el Afiliado está PENDIENTE. Utiliza los botones de la derecha para Editar o Eliminar cada registro individualmente.</p>
                 
                 <table id="tabla-solicitudes">
                     <thead>
@@ -375,12 +371,13 @@
                             <th>RIF</th>
                             <th>Afiliado</th>
                             <th>Serial</th>
+                            <th>Banco</th>
                             <th>Estatus</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-solicitudes">
-                        <tr><td colspan="9" style="text-align:center;">Cargando información...</td></tr>
+                        <tr><td colspan="10" style="text-align:center;">Cargando información...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -453,33 +450,92 @@
         </div>
     </div>
 
-    <!-- MODAL DE EDICIÓN -->
+    <!-- MODAL DE DETALLE Y EDICIÓN COMPLETA -->
     <div id="modal-edicion" class="modal-overlay">
         <div class="modal-content">
-            <h3>Editar Solicitud</h3>
+            <h3>📝 Detalle y Edición de Solicitud</h3>
             <form id="form-edicion">
                 <input type="hidden" id="edit_id">
-                <div class="form-group"><label>Comercio</label><input type="text" id="edit_comercio" required></div>
-                <div class="form-group"><label>RIF</label><input type="text" id="edit_rif" required></div>
-                <div class="form-group"><label>Afiliado</label><input type="text" id="edit_afiliado" required></div>
-                <div class="form-group"><label>Serial</label><input type="text" id="edit_serial"></div>
-                <div class="botones-accion" style="margin-top: 15px;">
-                    <button type="button" class="btn-secundario" onclick="document.getElementById('modal-edicion').style.display='none'">Cancelar</button>
-                    <button type="submit" class="btn-principal" id="btn-guardar-edicion">Guardar Cambios</button>
+                <div class="detalle-grid">
+                    <div class="form-group"><label>Comercio / Razón Social</label><input type="text" id="edit_comercio" required></div>
+                    <div class="form-group"><label>RIF</label><input type="text" id="edit_rif" required></div>
+                    <div class="form-group"><label>Nº Afiliado</label><input type="text" id="edit_afiliado" required></div>
+                    <div class="form-group"><label>Serial</label><input type="text" id="edit_serial"></div>
+                    
+                    <div class="form-group">
+                        <label>Banco</label>
+                        <select id="edit_banco" required>
+                            <option value="BANCO DE VENEZUELA">Venezuela</option>
+                            <option value="VENEZOLANO DE CREDITO">Venezolano de Créd.</option>
+                            <option value="MERCANTIL">Mercantil</option>
+                            <option value="PROVINCIAL">Provincial</option>
+                            <option value="BANCARIBE">Bancaribe</option>
+                            <option value="EXTERIOR">Exterior</option>
+                            <option value="CARONI">Caroní</option>
+                            <option value="BANESCO">Banesco</option>
+                            <option value="PLAZA">Plaza</option>
+                            <option value="BFC">BFC Fondo Común</option>
+                            <option value="100% BANCO">100% Banco</option>
+                            <option value="DEL SUR">Del Sur</option>
+                            <option value="TESORO">Tesoro</option>
+                            <option value="BANCRECER">Bancrecer</option>
+                            <option value="MI BANCO">Mi Banco</option>
+                            <option value="ACTIVO">Activo</option>
+                            <option value="BANCAMIGA">Bancamiga</option>
+                            <option value="BANPLUS">Banplus</option>
+                            <option value="BICENTENARIO">Bicentenario</option>
+                            <option value="BANFANB">Banfanb</option>
+                            <option value="BNC">BNC Nacional de Crédito</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Cuenta Bancaria (20 Díg.)</label><input type="text" id="edit_cuenta" required></div>
+                    
+                    <div class="form-group">
+                        <label>Modelo POS</label>
+                        <select id="edit_modelo">
+                            <option value="N950K">N950K</option><option value="N750">N750</option>
+                            <option value="N950S">N950S</option><option value="N910">N910</option>
+                            <option value="SP600">SP600</option><option value="6210">6210</option>
+                            <option value="7210">7210</option><option value="ME51">ME51</option>
+                            <option value="ME60">ME60</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Comunicación</label>
+                        <select id="edit_comunicacion">
+                            <option value="GPRS">GPRS</option><option value="WIFI">WIFI</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Operadora</label>
+                        <select id="edit_operadora">
+                            <option value="DIGITEL">Digitel</option><option value="MOVISTAR">Movistar</option><option value="MOVILNET">Movilnet</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Actividad Comercial</label><input type="text" id="edit_actividad"></div>
+                    
+                    <div class="form-group"><label>Persona de Contacto</label><input type="text" id="edit_contacto_nombre"></div>
+                    <div class="form-group"><label>Cédula de Contacto</label><input type="text" id="edit_contacto_cedula"></div>
+                    <div class="form-group"><label>Teléfono</label><input type="text" id="edit_telefono"></div>
+                    <div class="form-group"><label>Correo</label><input type="email" id="edit_correo"></div>
+                    
+                    <div class="form-group">
+                        <label>Tipo Contribuyente</label>
+                        <select id="edit_contribuyente">
+                            <option value="ORDINARIO">Ordinario</option><option value="ESPECIAL">Especial</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: span 2;"><label>Dirección Fiscal</label><textarea id="edit_direccion" rows="2"></textarea></div>
+                </div>
+                
+                <div style="margin-top: 20px; text-align: center; display:flex; gap:10px; justify-content:center;">
+                    <a id="btn-abrir-drive-edit" href="#" target="_blank" class="btn-principal" style="text-decoration:none; padding:10px; flex:1; background:#0dcaf0; color:black;">📁 Expediente Drive</a>
+                    <button type="submit" class="btn-principal" id="btn-guardar-edicion" style="flex:1;">💾 Guardar Cambios</button>
+                    <button type="button" class="btn-secundario" style="flex:1;" onclick="document.getElementById('modal-edicion').style.display='none'">Cerrar</button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- MODAL DE DETALLE COMPLETO -->
-    <div id="modal-detalle" class="modal-overlay">
-        <div class="modal-content" style="width:600px;">
-            <h3>👁️ Detalles de la Solicitud</h3>
-            <div id="detalle-body" class="detalle-grid"></div>
-            <div style="margin-top: 20px; text-align: center;">
-                <a id="btn-abrir-drive" href="#" target="_blank" class="btn-principal" style="text-decoration:none; padding:10px 20px; display:inline-block; margin-bottom:10px;">📁 Abrir Expediente en Drive</a>
-                <button type="button" class="btn-secundario" style="width:100%;" onclick="document.getElementById('modal-detalle').style.display='none'">Cerrar</button>
-            </div>
         </div>
     </div>
 
@@ -510,7 +566,7 @@
                     document.getElementById('navbar').style.display = "flex";
                     document.getElementById('app-container').style.display = "flex";
                 } else { errorDiv.innerText = "Usuario o contraseña incorrectos."; errorDiv.style.display = "block"; }
-            } catch(e) { errorDiv.innerText = "Error de conexión. Verifica que tienes solo una cuenta Google iniciada."; errorDiv.style.display = "block"; }
+            } catch(e) { errorDiv.innerText = "Error de conexión. Verifica que tienes solo una cuenta Google iniciada en este navegador."; errorDiv.style.display = "block"; }
             btn.innerText = "Ingresar"; btn.disabled = false;
         });
 
@@ -596,7 +652,7 @@
         // ==========================================
         async function cargarSolicitudes() {
             const tbody = document.getElementById('tbody-solicitudes');
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Cargando información... ⏳</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Cargando información... ⏳</td></tr>';
             const isMaestro = (SESSION.rol === 'maestro');
             
             document.getElementById('th-checkbox').style.display = isMaestro ? 'table-cell' : 'none';
@@ -610,7 +666,7 @@
                     tbody.innerHTML = '';
                     DATA_SOLICITUDES = data.datos.reverse(); 
                     
-                    if(DATA_SOLICITUDES.length === 0) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">No hay solicitudes registradas.</td></tr>'; return; }
+                    if(DATA_SOLICITUDES.length === 0) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">No hay solicitudes registradas.</td></tr>'; return; }
                     
                     DATA_SOLICITUDES.forEach(reg => {
                         const afiliadoStr = String(reg.afiliado).toUpperCase();
@@ -622,20 +678,23 @@
                         
                         tr.innerHTML = `
                             ${checkTd}
-                            <td>${reg.fecha.split(' ')[0]}</td><td>${reg.usuario}</td><td>${reg.comercio}</td>
-                            <td>${reg.rif}</td><td style="font-weight:bold;">${reg.afiliado}</td>
+                            <td>${reg.fecha}</td>
+                            <td>${reg.usuario}</td>
+                            <td>${reg.comercio}</td>
+                            <td>${reg.rif}</td>
+                            <td style="font-weight:bold;">${reg.afiliado}</td>
                             <td>${reg.serial}</td>
+                            <td>${reg.banco}</td>
                             <td>${estatusBadge}</td>
-                            <td>
-                                <button class="btn-tabla btn-secundario" onclick="verDetalle('${reg.id}')" title="Ver Detalle Completo">👁️</button>
-                                <button class="btn-tabla btn-editar" onclick="abrirEdicion('${reg.id}', '${reg.comercio}', '${reg.rif}', '${reg.afiliado}', '${reg.serial}')" title="Editar Rápido">✏️</button>
-                                <button class="btn-tabla btn-eliminar-registro" onclick="eliminarRegistro('${reg.id}')" title="Eliminar Definitivamente">🗑️</button>
+                            <td class="acciones-col">
+                                <button class="btn-tabla btn-editar" onclick="verDetalleYEditar('${reg.id}')" title="Detalle y Edición">👁️ Ver / Editar</button>
+                                <button class="btn-tabla btn-eliminar-registro" onclick="eliminarRegistro('${reg.id}')" title="Eliminar Definitivamente">🗑️ Borrar</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
                     });
                 }
-            } catch(e) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">Error de conexión.</td></tr>'; }
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:red;">Error de conexión.</td></tr>'; }
         }
 
         function toggleAll(source) {
@@ -661,27 +720,37 @@
             } catch(e) { alert("Fallo de conexión."); } finally { btn.innerText = "✔️ Validar Seleccionadas"; btn.disabled = false; }
         }
 
-        function verDetalle(idUnico) {
+        function verDetalleYEditar(idUnico) {
             const reg = DATA_SOLICITUDES.find(r => r.id === idUnico);
             if(!reg) return;
 
-            document.getElementById('detalle-body').innerHTML = `
-                <div class="detalle-item"><span>Comercio / Razón Social</span><div>${reg.comercio}</div></div>
-                <div class="detalle-item"><span>RIF</span><div>${reg.rif}</div></div>
-                <div class="detalle-item"><span>Nº Afiliado</span><div>${reg.afiliado}</div></div>
-                <div class="detalle-item"><span>Serial</span><div>${reg.serial}</div></div>
-                <div class="detalle-item"><span>Banco</span><div>${reg.banco}</div></div>
-                <div class="detalle-item"><span>Cuenta (20 dígitos)</span><div>${reg.cuenta}</div></div>
-                <div class="detalle-item"><span>Modelo / Operadora</span><div>${reg.modelo} (${reg.operadora})</div></div>
-                <div class="detalle-item"><span>Contacto</span><div>${reg.contacto_nombre} (C.I: ${reg.contacto_cedula})</div></div>
-                <div class="detalle-item"><span>Teléfono</span><div>${reg.telefono}</div></div>
-                <div class="detalle-item"><span>Correo</span><div>${reg.correo}</div></div>
-                <div class="detalle-item"><span>Actividad</span><div>${reg.actividad}</div></div>
-                <div class="detalle-item"><span>Contribuyente</span><div>${reg.contribuyente}</div></div>
-                <div class="detalle-item" style="grid-column: span 2;"><span>Dirección</span><div>${reg.direccion}</div></div>
-            `;
-            document.getElementById('btn-abrir-drive').href = reg.folderUrl !== "Sin documentos" ? reg.folderUrl : "#";
-            document.getElementById('modal-detalle').style.display = 'flex';
+            document.getElementById('edit_id').value = reg.id;
+            document.getElementById('edit_comercio').value = reg.comercio;
+            document.getElementById('edit_rif').value = reg.rif;
+            document.getElementById('edit_afiliado').value = reg.afiliado;
+            document.getElementById('edit_serial').value = reg.serial !== 'undefined' ? reg.serial : '';
+            document.getElementById('edit_banco').value = reg.banco;
+            document.getElementById('edit_cuenta').value = reg.cuenta;
+            document.getElementById('edit_modelo').value = reg.modelo;
+            document.getElementById('edit_comunicacion').value = reg.comunicacion;
+            document.getElementById('edit_operadora').value = reg.operadora;
+            document.getElementById('edit_contacto_nombre').value = reg.contacto_nombre;
+            document.getElementById('edit_contacto_cedula').value = reg.contacto_cedula;
+            document.getElementById('edit_telefono').value = reg.telefono;
+            document.getElementById('edit_correo').value = reg.correo;
+            document.getElementById('edit_actividad').value = reg.actividad;
+            document.getElementById('edit_contribuyente').value = reg.contribuyente;
+            document.getElementById('edit_direccion').value = reg.direccion;
+            
+            const btnDrive = document.getElementById('btn-abrir-drive-edit');
+            if(reg.folderUrl !== "Sin documentos") {
+                btnDrive.href = reg.folderUrl;
+                btnDrive.style.display = 'block';
+            } else {
+                btnDrive.style.display = 'none';
+            }
+            
+            document.getElementById('modal-edicion').style.display = 'flex';
         }
 
         async function eliminarRegistro(idUnico) {
@@ -694,21 +763,31 @@
             } catch(e) { alert("Fallo de conexión."); }
         }
 
-        function abrirEdicion(id, comercio, rif, afiliado, serial) {
-            document.getElementById('edit_id').value = id; document.getElementById('edit_comercio').value = comercio;
-            document.getElementById('edit_rif').value = rif; document.getElementById('edit_afiliado').value = afiliado;
-            document.getElementById('edit_serial').value = serial !== 'undefined' ? serial : '';
-            document.getElementById('modal-edicion').style.display = 'flex';
-        }
-
         document.getElementById('form-edicion').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-guardar-edicion'); btn.innerText = "Guardando..."; btn.disabled = true;
+            
             const payload = {
-                accion: "actualizar", id_registro: document.getElementById('edit_id').value,
-                comercio: document.getElementById('edit_comercio').value, rif: document.getElementById('edit_rif').value,
-                afiliado: document.getElementById('edit_afiliado').value, serial: document.getElementById('edit_serial').value
+                accion: "actualizar", 
+                id_registro: document.getElementById('edit_id').value,
+                comercio: document.getElementById('edit_comercio').value, 
+                rif: document.getElementById('edit_rif').value,
+                afiliado: document.getElementById('edit_afiliado').value, 
+                serial: document.getElementById('edit_serial').value,
+                banco: document.getElementById('edit_banco').value,
+                cuenta: document.getElementById('edit_cuenta').value,
+                modelo: document.getElementById('edit_modelo').value,
+                comunicacion: document.getElementById('edit_comunicacion').value,
+                operadora: document.getElementById('edit_operadora').value,
+                contacto_nombre: document.getElementById('edit_contacto_nombre').value,
+                contacto_cedula: document.getElementById('edit_contacto_cedula').value,
+                telefono: document.getElementById('edit_telefono').value,
+                correo: document.getElementById('edit_correo').value,
+                actividad: document.getElementById('edit_actividad').value,
+                contribuyente: document.getElementById('edit_contribuyente').value,
+                direccion: document.getElementById('edit_direccion').value
             };
+            
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
@@ -734,8 +813,6 @@
         const galeria = document.getElementById('galeria'); 
         
         const form = document.getElementById('param-form');
-        const btnLimpiar = document.getElementById('btn-limpiar');
-        const resultadoCrm = document.getElementById('resultado-crm');
         const btnProcesar = document.getElementById('btn-procesar');
         const ocrLoading = document.getElementById('ocr-loading');
         const indicadorRecorte = document.getElementById('indicador-recorte');
@@ -780,12 +857,12 @@
         }
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(bindFocusEvent);
 
-        btnLimpiar.addEventListener('click', () => {
+        document.getElementById('btn-limpiar').addEventListener('click', () => {
             if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
                 form.reset(); document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
                 archivosMemoria.forEach(a => URL.revokeObjectURL(a.url)); archivosMemoria = []; galeria.innerHTML = '';
                 previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height);
-                indicadorRecorte.style.display = 'none'; resultadoCrm.style.display = 'none'; activeInputId = null; activeDocumentId = null; document.getElementById('seccion-constitutivo').style.display = 'none'; document.getElementById('pdf-controls').style.display = 'none';
+                indicadorRecorte.style.display = 'none'; document.getElementById('resultado-crm').style.display = 'none'; activeInputId = null; activeDocumentId = null; document.getElementById('seccion-constitutivo').style.display = 'none'; document.getElementById('pdf-controls').style.display = 'none';
                 const serialesCont = document.getElementById('seriales-container'); while (serialesCont.children.length > 1) { serialesCont.removeChild(serialesCont.lastChild); }
             }
         });
@@ -839,6 +916,7 @@
                 }
                 if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
                 if(activeInputId === 'const_fecha') { const matchF = textoExtraido.match(/\d{2}[\/\-]\d{2}[\/\-]\d{4}/); if(matchF) textoExtraido = matchF[0].replace(/\-/g, '/'); }
+                
                 if (textoExtraido) { document.getElementById(activeInputId).value = textoExtraido; }
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; }
         }
@@ -946,84 +1024,9 @@
             } else { mostrarArchivo(archivosMemoria[archivosMemoria.length - 1].id); }
         }
 
-        async function ejecutarOCRAuto(imagenOSource, tipoDoc) {
-            ocrLoading.style.display = 'block'; ocrLoading.innerText = "Extrayendo Datos... 🔍"; btnProcesar.disabled = true;
-            try {
-                let imgProcesada = imagenOSource;
-                if(document.getElementById('chk-filtro-ocr').checked) {
-                    const imgT = new Image(); imgProcesada = await new Promise(r => {
-                        imgT.onload = () => { const c = document.createElement('canvas'); c.width = imgT.width; c.height = imgT.height; c.getContext('2d').filter = 'grayscale(100%) contrast(150%) brightness(110%)'; c.getContext('2d').drawImage(imgT, 0, 0); r(c.toDataURL('image/jpeg')); }; imgT.src = imagenOSource;
-                    });
-                }
-                const result = await Tesseract.recognize(imgProcesada, 'spa');
-                const textoPlano = result.data.text; const textoUpper = textoPlano.toUpperCase();
-                
-                if (tipoDoc === 'CONSTITUTIVO') {
-                    const matchTomo = textoUpper.match(/TOMO[\s:]+([A-Z0-9\-]+)/); if (matchTomo) document.getElementById('const_tomo').value = matchTomo[1];
-                    const matchNumero = textoUpper.match(/N[UÚ]MERO[\s:]+(\d+)/); if (matchNumero) document.getElementById('const_numero').value = matchNumero[1];
-                    const matchExp = textoUpper.match(/EXPEDIENTE[\s:]+([A-Z0-9\-]+)/); if (matchExp) document.getElementById('const_expediente').value = matchExp[1];
-                    const matchFecha = textoPlano.match(/\d{2}[\/\-]\d{2}[\/\-]\d{4}/); if (matchFecha) document.getElementById('const_fecha').value = matchFecha[0].replace(/\-/g, '/');
-                }
-                if (tipoDoc === 'CEDULA') { const matchCedula = textoPlano.replace(/\s+/g, '').match(/(?:V|E)?[-]?(\d{6,8})/i); if (matchCedula) document.getElementById('contacto_cedula').value = matchCedula[1]; }
-                if (tipoDoc === 'BANCO' || tipoDoc === 'CORREO') { const matchCuenta = textoPlano.replace(/[\s\-\.]/g, '').match(/01\d{18}/); if (matchCuenta) { document.getElementById('cuenta').value = matchCuenta[0]; evaluarBanco(matchCuenta[0]); } }
-                if (tipoDoc === 'CORREO') {
-                    const textoSinEspacios = textoPlano.replace(/\s+/g, '');
-                    const matchCorreo = textoSinEspacios.replace(/(?:\(a\)|\[a\]|\{a\}|©|®|&)/g, '@').match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
-                    if (matchCorreo) document.getElementById('correo').value = matchCorreo[0].toLowerCase();
-                    const matchTelefono = textoSinEspacios.match(/(?:0414|0424|0412|0416|0426|02\d{2})\d{7}/);
-                    if (matchTelefono) document.getElementById('telefono').value = matchTelefono[0];
-                    const matchSerial = textoUpper.replace(/(ASIGNADO|POSVENTA|PUNTO)/g, '').match(/(?:SERIAL|S\/N|SN)[\s\S]{0,35}?([A-Z0-9]{8,15})/);
-                    if (matchSerial && /\d/.test(matchSerial[1])) document.querySelector('.serial-input').value = matchSerial[1];
-                    const matchAfiliadoGeneral = textoUpper.match(/(?:AFILIACI[OÓ]N|AFILIADO|C[OÓ]DIGO[\s\.]*AFILIACI[OÓ]N)[\s\S]{0,35}?([JGVE]?0?\d{11,14}|\d{8}|PENDIENTE)/);
-                    if (matchAfiliadoGeneral) document.getElementById('afiliado').value = matchAfiliadoGeneral[1];
-                    if (textoUpper.includes('DIGITEL')) document.getElementById('operadora').value = 'DIGITEL'; else if (textoUpper.includes('MOVISTAR')) document.getElementById('operadora').value = 'MOVISTAR'; else if (textoUpper.includes('MOVILNET')) document.getElementById('operadora').value = 'MOVILNET';
-                    const matchModelo = textoUpper.match(/(N950K|N750|N950S|N910|SP600|6210|7210|ME51|ME60)/); if (matchModelo) document.getElementById('modelo').value = matchModelo[1];
-                    const matchActividad = textoUpper.match(/(?:ACTIVIDAD\s+ECON[OÓ]MICA|ACTIVIDAD\s+COMERCIAL|RAMO)[\s\S]{0,35}?([A-ZÑ\s]{5,40})/); if (matchActividad) document.getElementById('actividad').value = matchActividad[1].replace(/\s+/g, ' ').trim();
-                }
-                if (tipoDoc === 'RIF') {
-                    const lineas = textoPlano.split('\n').map(l => l.trim()).filter(l => l.length > 0); const listaFirmas = document.getElementById('lista-firmas'); listaFirmas.innerHTML = ''; let arrayFirmas = [];
-                    const matchCondicion = textoPlano.match(/Condici[oó]n:([^\n]+)/i);
-                    if (matchCondicion) {
-                        const lineaCondicion = matchCondicion[1].toUpperCase();
-                        if (lineaCondicion.includes('ESPECIAL') || lineaCondicion.includes('AGENTE DE RETENCI')) document.getElementById('contribuyente').value = 'ESPECIAL'; else if (lineaCondicion.includes('ORDINARIO')) document.getElementById('contribuyente').value = 'ORDINARIO';
-                    } else {
-                        if (textoUpper.includes('CONTRIBUYENTE ESPECIAL') || textoUpper.includes('Y AGENTE DE RETENCI')) document.getElementById('contribuyente').value = 'ESPECIAL'; else if (textoUpper.includes('CONTRIBUYENTE ORDINARIO')) document.getElementById('contribuyente').value = 'ORDINARIO';
-                    }
-                    let estadoLectura = "BUSCANDO_RIF"; let direccionFiscal = "";
-                    for (let i = 0; i < lineas.length; i++) {
-                        let linea = lineas[i].split(/(FECHA|ÚLTIMA|ULTIMA|N° COMP|N\* COMP|N°COMP|GERENCIA|DATOS DE REGISTRO|IDENTIFICACIÓN DEL CONTRIBUYENTE|TRIBUTOS|SEDE REGIONAL|INTERNOS)/i)[0].trim();
-                        if (!linea) continue; const lineaUpper = linea.toUpperCase();
-                        if (estadoLectura === "BUSCANDO_RIF") {
-                            const matchRif = linea.match(/[JGVE]-?\d{8,9}/i);
-                            if (matchRif) { document.getElementById('rif').value = matchRif[0].toUpperCase().replace(/[^A-Z0-9]/g, ''); document.getElementById('rif').dispatchEvent(new Event('input'));
-                                let restoDeLinea = linea.replace(/RIF[\s:]*/ig, '').replace(matchRif[0], '').trim();
-                                if (restoDeLinea.length > 3) { arrayFirmas.push(restoDeLinea); estadoLectura = "BUSCANDO_DOMICILIO"; } else { estadoLectura = "BUSCANDO_NOMBRE"; } continue;
-                            }
-                        }
-                        if (estadoLectura === "BUSCANDO_NOMBRE") { if (!lineaUpper.includes('DOMICILIO') && !lineaUpper.includes('DIRECCIÓN') && !lineaUpper.includes('CONDICIÓN')) { if (linea.length > 3) { arrayFirmas.push(linea); estadoLectura = "BUSCANDO_DOMICILIO"; continue; } } else { estadoLectura = "BUSCANDO_DOMICILIO"; } }
-                        if (estadoLectura === "BUSCANDO_DOMICILIO" || lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL')) {
-                            if (lineaUpper.includes('DOMICILIO FISCAL') || lineaUpper.includes('DIRECCIÓN FISCAL') || lineaUpper.includes('DIRECCION FISCAL')) {
-                                estadoLectura = "CAPTURANDO_DIRECCION"; let fragmento = linea.replace(/(DOMICILIO FISCAL|DIRECCIÓN FISCAL|DIRECCION FISCAL)[\s:]*/ig, '').trim();
-                                if (fragmento) { let matchZona = fragmento.match(/(ZONA POSTAL\s*\d+)/i); if (matchZona) { direccionFiscal += fragmento.substring(0, matchZona.index + matchZona[0].length) + " "; estadoLectura = "FIN_DIRECCION"; } else { direccionFiscal += fragmento + " "; } } continue; 
-                            }
-                        }
-                        if (estadoLectura === "CAPTURANDO_DIRECCION") {
-                            if (lineaUpper.includes('ESTE CONTRIBUYENTE') || lineaUpper.includes('FIRMAS PERSONALES') || lineaUpper.includes('CONDICIÓN')) { estadoLectura = "FIN_DIRECCION"; } else { let matchZona = linea.match(/(ZONA POSTAL\s*\d+)/i); if (matchZona) { direccionFiscal += linea.substring(0, matchZona.index + matchZona[0].length) + " "; estadoLectura = "FIN_DIRECCION"; } else { direccionFiscal += linea + " "; } }
-                        }
-                        if (lineaUpper.includes('FIRMAS PERSONALES') && !lineaUpper.includes('NO POSEE')) { estadoLectura = "CAPTURANDO_FIRMAS"; let textoExtra = linea.replace(/FIRMAS PERSONALES\D*\d*/ig, '').replace(/^[^a-zA-Z0-9]+/, '').trim(); if (textoExtra.length > 3 && !textoExtra.toUpperCase().match(/(SISTEMAS EN L|SELLO H|CONDICI|MINISTERIO|GERENCIA)/)) arrayFirmas.push(textoExtra); continue; }
-                        if (estadoLectura === "CAPTURANDO_FIRMAS") { if (lineaUpper.match(/(SISTEMAS EN L|SELLO H[UÚ]MEDO|CONDICI[OÓ]N|MINISTERIO|GERENCIA|TRIBUTOS)/)) { estadoLectura = "FIN"; continue; } if (linea.length > 3 && !lineaUpper.includes('FIRMAS PERSONALES')) arrayFirmas.push(linea); }
-                    }
-                    if (direccionFiscal) document.getElementById('direccion').value = direccionFiscal.replace(/\s+/g, ' ').trim();
-                    if (arrayFirmas.length > 0) { let firmasUnicas = [...new Set(arrayFirmas)]; firmasUnicas.forEach(firma => { let option = document.createElement('option'); option.value = firma; listaFirmas.appendChild(option); }); if (firmasUnicas.length > 1) { document.getElementById('comercio').value = ""; document.getElementById('comercio').placeholder = "👇 Haz clic aquí para elegir la firma..."; } else { document.getElementById('comercio').value = firmasUnicas[0]; } }
-                    const valRif = document.getElementById('rif').value.toUpperCase();
-                    if (valRif.startsWith('V') || valRif.startsWith('E')) { document.getElementById('contacto_cedula').value = valRif.replace(/\D/g, ''); const valComercio = document.getElementById('comercio').value; if (valComercio) document.getElementById('contacto_nombre').value = valComercio; }
-                }
-            } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; btnProcesar.disabled = false; }
-        }
-
-        btnProcesar.addEventListener('click', async (e) => {
-            e.preventDefault();
+        function validarDatos() {
             document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+            
             let rifInput = document.getElementById('rif'); rifInput.value = rifInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
             let cuentaInput = document.getElementById('cuenta'); cuentaInput.value = cuentaInput.value.replace(/\D/g, '');
             
@@ -1042,12 +1045,28 @@
             if (!/^0[1-9]\d{9}$/.test(document.getElementById('telefono').value.replace(/\D/g, ''))) { document.getElementById('telefono').classList.add('input-error'); errores.push("Teléfono inválido."); }
             if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(document.getElementById('correo').value.trim())) { document.getElementById('correo').classList.add('input-error'); errores.push("Correo electrónico inválido."); }
 
-            if (errores.length > 0) { alert("⚠️ ERRORES EN LA SOLICITUD:\n\n- " + errores.join("\n- ")); return; }
+            if (errores.length > 0) { alert("⚠️ ERRORES EN LA SOLICITUD:\n\n- " + errores.join("\n- ")); return false; }
+            return true;
+        }
 
-            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos..."; btnProcesar.style.backgroundColor = "#ffc107"; btnProcesar.style.color = "#000"; btnProcesar.disabled = true;
+        btnProcesar.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!validarDatos()) return;
 
-            const filePromises = archivosMemoria.map(a => { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ nombre: a.file.name || 'doc_' + Date.now(), mimeType: a.file.type, base64: reader.result.split(',')[1] }); reader.onerror = reject; reader.readAsDataURL(a.file); }); });
+            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos...";
+            btnProcesar.style.backgroundColor = "#ffc107"; btnProcesar.style.color = "#000"; btnProcesar.disabled = true;
+
+            const filePromises = archivosMemoria.map(a => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve({ nombre: a.file.name || 'doc_' + Date.now(), mimeType: a.file.type, base64: reader.result.split(',')[1] });
+                    reader.onerror = reject; reader.readAsDataURL(a.file);
+                });
+            });
             const archivosBase64 = await Promise.all(filePromises);
+            
+            const inputsSeriales = document.querySelectorAll('.serial-input'); const arrSeriales = [];
+            inputsSeriales.forEach(si => { let v = si.value.replace(/\s/g, '').toUpperCase(); if(v !== "") arrSeriales.push(v); });
 
             const datosParaGuardar = {
                 accion: "guardar", usuario_actual: SESSION.usuario, comercio: document.getElementById('comercio').value,
