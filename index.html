@@ -45,19 +45,21 @@
         #preview-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
         #selection-box { position: absolute; border: 2px dashed #0d6efd; background: rgba(13, 110, 253, 0.2); pointer-events: none; display: none; z-index: 10;}
         
+        /* BARRAS Y CONTROLES MAP-STYLE + PAGINACIÓN PDF */
         .map-zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 50; }
         .btn-map-zoom { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.75); border: 1px solid rgba(0,0,0,0.2); border-radius: 8px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: background 0.2s;}
         .btn-map-zoom:hover { background: rgba(255, 255, 255, 1); }
 
         #pdf-controls { display: none; flex-direction: column; gap: 5px; align-items: center; background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.2); border-radius: 8px; padding: 5px; margin-bottom: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
         #pdf-page-indicator { font-size: 0.8rem; font-weight: bold; color: #0d6efd; }
-        .pdf-nav-btn { width: 30px; height: 30px; background: #e9ecef; border: 1px solid #ccc; border-radius: 5px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;}
-        
+        .pdf-nav-btn { width: 30px; height: 30px; background: #e9ecef; border: 1px solid #ccc; border-radius: 5px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
+        .pdf-nav-btn:hover { background: #dee2e6; }
+
         #ocr-loading { display: none; position: absolute; top: 20px; right: 20px; background: #ffc107; color: #000; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 60;}
         
         .galeria { height: 110px; flex-shrink: 0; display: flex; gap: 15px; padding: 15px 10px; overflow-x: auto; overflow-y: hidden; background: #f8f9fa; border-top: 1px solid #ccc; z-index: 20;}
         .galeria-item { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 80px;}
-        .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff;}
+        .thumb { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 3px solid transparent; border-radius: 5px; background: #fff; transition: 0.2s;}
         .thumb.active { border-color: #0d6efd; transform: scale(1.05);}
         .thumb.pdf-icon { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: #dc3545; background: #fff;}
         .doc-tipo { font-size: 0.7rem; padding: 2px; border-radius: 3px; border: 1px solid #0d6efd; width: 100%; text-align: center; margin-top: 5px;}
@@ -84,10 +86,13 @@
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
         th { background-color: #e9ecef; color: #495057; }
         .fila-pendiente { background-color: #fff3cd !important; }
+        
         .btn-tabla { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem; margin-right: 5px; transition: 0.2s;}
         .btn-editar { background: #ffc107; color: #000; border: 1px solid #d39e00;}
+        .btn-editar:hover { background: #e0a800; }
         .btn-eliminar-registro { background: #dc3545; color: white; border: 1px solid #b02a37;}
-        
+        .btn-eliminar-registro:hover { background: #c82333; }
+
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center;}
         .modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px; max-width: 90%; max-height: 90vh; overflow-y: auto;}
         .modal-content h3 { margin-top: 0; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 10px;}
@@ -485,9 +490,8 @@
         let INFO_PARQUE_ACTUAL = null;
         let BANCO_PARQUE_ACTUAL = "";
         let activeDocumentId = null;
-        let DATA_SOLICITUDES = []; // Memoria global para el modal de detalles
+        let DATA_SOLICITUDES = []; 
 
-        // --- SISTEMA DE LOGIN (SIN HEADERS DE CORS) ---
         document.getElementById('form-login').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-login');
@@ -544,7 +548,7 @@
                     document.getElementById('tcrs-tabla-datos').innerHTML = htmlTabla;
                     resBox.style.display = 'block';
                 } else { alert("❌ " + data.mensaje); }
-            } catch(e) { alert("Fallo de conexión."); } finally { btn.innerText = "🔍 Consultar Equipo"; btn.disabled = false; }
+            } catch(e) { alert("Fallo de conexión al buscar el equipo."); } finally { btn.innerText = "🔍 Consultar Equipo"; btn.disabled = false; }
         });
 
         document.getElementById('form-guardar-tcrs').addEventListener('submit', async (e) => {
@@ -604,12 +608,11 @@
                 
                 if(data.status === "exito") {
                     tbody.innerHTML = '';
-                    DATA_SOLICITUDES = data.datos.reverse(); // Almacenar globalmente para el modal de detalles
+                    DATA_SOLICITUDES = data.datos.reverse(); 
                     
                     if(DATA_SOLICITUDES.length === 0) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">No hay solicitudes registradas.</td></tr>'; return; }
                     
                     DATA_SOLICITUDES.forEach(reg => {
-                        // FIX: previene error si el afiliado viene como Número de Google Sheets
                         const afiliadoStr = String(reg.afiliado).toUpperCase();
                         const esPendiente = (afiliadoStr === "PENDIENTE") ? "fila-pendiente" : "";
                         const tr = document.createElement('tr'); tr.className = esPendiente;
@@ -635,7 +638,6 @@
             } catch(e) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">Error de conexión.</td></tr>'; }
         }
 
-        // FUNCIONES DE SUPERVISOR (VALIDACIÓN Y DETALLES)
         function toggleAll(source) {
             const checkboxes = document.querySelectorAll('.chk-solicitud:not(:disabled)');
             for(let i=0; i<checkboxes.length; i++) checkboxes[i].checked = source.checked;
@@ -682,7 +684,6 @@
             document.getElementById('modal-detalle').style.display = 'flex';
         }
 
-        // FUNCIONES DE EDICIÓN Y ELIMINACIÓN
         async function eliminarRegistro(idUnico) {
             if(!confirm("¿Estás seguro de que deseas ELIMINAR esta solicitud?")) return;
             try {
@@ -718,7 +719,7 @@
         });
 
         // ==========================================
-        // VISTA DE CARGA DE INSTALACIONES (OCR, CANVAS Y PAGINACIÓN PDF)
+        // VISTA DE CARGA DE INSTALACIONES (OCR Y CANVAS)
         // ==========================================
         const zonaArrastre = document.getElementById('zona-arrastre');
         const overlay = document.getElementById('drop-zone-overlay');
@@ -731,19 +732,26 @@
         const selectionBox = document.getElementById('selection-box');
         const zoomControls = document.getElementById('zoom-controls');
         const galeria = document.getElementById('galeria'); 
+        
         const form = document.getElementById('param-form');
+        const btnLimpiar = document.getElementById('btn-limpiar');
+        const resultadoCrm = document.getElementById('resultado-crm');
         const btnProcesar = document.getElementById('btn-procesar');
         const ocrLoading = document.getElementById('ocr-loading');
         const indicadorRecorte = document.getElementById('indicador-recorte');
         const campoObjetivo = document.getElementById('campo-objetivo');
         
-        let archivosMemoria = []; let baseCanvasWidth = 0; let baseCanvasHeight = 0; let zoomActual = 1; let isDrawing = false; let startX, startY; let activeInputId = null;
+        let archivosMemoria = [];
+        let baseCanvasWidth = 0; let baseCanvasHeight = 0;
+        let zoomActual = 1; let isDrawing = false; let startX, startY;
+        let activeInputId = null;
 
         document.getElementById('rif').addEventListener('input', (e) => {
             let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
             if (val.startsWith('J') || val.startsWith('G')) { document.getElementById('seccion-constitutivo').style.display = 'block'; } 
             else { document.getElementById('seccion-constitutivo').style.display = 'none'; }
         });
+
         document.getElementById('comercio').addEventListener('input', (e) => {
             const valRif = document.getElementById('rif').value.toUpperCase();
             if (valRif.startsWith('V') || valRif.startsWith('E')) { document.getElementById('contacto_nombre').value = e.target.value; }
@@ -752,14 +760,16 @@
         function agregarSerial() {
             const container = document.getElementById('seriales-container');
             const div = document.createElement('div'); div.className = 'form-row'; div.style.marginBottom = '5px';
-            div.innerHTML = `<input type="text" class="serial-input" id="serial_${Date.now()}" required style="width: 100%;">
-                             <button type="button" class="btn-secundario" onclick="this.parentElement.remove()" style="flex:none; width:45px;">❌</button>`;
+            const uniqueId = 'serial_' + Date.now();
+            div.innerHTML = `<input type="text" class="serial-input" id="${uniqueId}" placeholder="Ej: NFD300348979" required style="width: 100%;">
+                             <button type="button" class="btn-secundario" onclick="this.parentElement.remove()" style="flex:none; width:45px;" title="Eliminar equipo">❌</button>`;
             container.appendChild(div); bindFocusEvent(div.querySelector('input'));
         }
 
         function bindFocusEvent(input) {
             input.addEventListener('focus', (e) => {
-                activeInputId = e.target.id; let labelText = "";
+                activeInputId = e.target.id;
+                let labelText = "";
                 if(e.target.parentElement.parentElement && e.target.parentElement.parentElement.previousElementSibling && e.target.parentElement.parentElement.previousElementSibling.tagName === 'LABEL') {
                     labelText = e.target.parentElement.parentElement.previousElementSibling.innerText; 
                 } else if(e.target.parentElement.previousElementSibling && e.target.parentElement.previousElementSibling.tagName === 'LABEL') {
@@ -770,34 +780,42 @@
         }
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(bindFocusEvent);
 
-        document.getElementById('btn-limpiar').addEventListener('click', () => {
-            if(confirm("¿Seguro de borrar toda la información y archivos?")) {
+        btnLimpiar.addEventListener('click', () => {
+            if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
                 form.reset(); document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
                 archivosMemoria.forEach(a => URL.revokeObjectURL(a.url)); archivosMemoria = []; galeria.innerHTML = '';
                 previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height);
-                indicadorRecorte.style.display = 'none'; document.getElementById('resultado-crm').style.display = 'none'; activeInputId = null; activeDocumentId = null; document.getElementById('seccion-constitutivo').style.display = 'none'; document.getElementById('pdf-controls').style.display = 'none';
+                indicadorRecorte.style.display = 'none'; resultadoCrm.style.display = 'none'; activeInputId = null; activeDocumentId = null; document.getElementById('seccion-constitutivo').style.display = 'none'; document.getElementById('pdf-controls').style.display = 'none';
                 const serialesCont = document.getElementById('seriales-container'); while (serialesCont.children.length > 1) { serialesCont.removeChild(serialesCont.lastChild); }
             }
         });
 
-        function aplicarZoom() { if (baseCanvasWidth === 0) return; canvasContainer.style.width = (baseCanvasWidth * zoomActual) + 'px'; canvasContainer.style.height = (baseCanvasHeight * zoomActual) + 'px'; }
+        function aplicarZoom() {
+            if (baseCanvasWidth === 0) return;
+            canvasContainer.style.width = (baseCanvasWidth * zoomActual) + 'px'; canvasContainer.style.height = (baseCanvasHeight * zoomActual) + 'px';
+        }
         function cambiarZoom(incremento) { zoomActual += incremento; if (zoomActual < 0.2) zoomActual = 0.2; if (zoomActual > 5) zoomActual = 5; aplicarZoom(); }
         function resetZoom() { const wrapWidth = previewWrapper.clientWidth - 40; const fitZoom = wrapWidth / baseCanvasWidth; zoomActual = fitZoom < 1 ? fitZoom : 1; aplicarZoom(); }
 
         canvasContainer.addEventListener('mousedown', (e) => {
             if (!activeInputId) { alert("Haz clic en la casilla del formulario donde quieres guardar el dato primero."); return; }
-            isDrawing = true; startX = e.offsetX; startY = e.offsetY; selectionBox.style.left = startX + 'px'; selectionBox.style.top = startY + 'px'; selectionBox.style.width = '0px'; selectionBox.style.height = '0px'; selectionBox.style.display = 'block';
+            isDrawing = true; startX = e.offsetX; startY = e.offsetY;
+            selectionBox.style.left = startX + 'px'; selectionBox.style.top = startY + 'px';
+            selectionBox.style.width = '0px'; selectionBox.style.height = '0px'; selectionBox.style.display = 'block';
         });
         window.addEventListener('mousemove', (e) => {
-            if (!isDrawing) return; const width = e.offsetX - startX; const height = e.offsetY - startY;
+            if (!isDrawing) return;
+            const width = e.offsetX - startX; const height = e.offsetY - startY;
             selectionBox.style.width = Math.abs(width) + 'px'; selectionBox.style.height = Math.abs(height) + 'px';
             selectionBox.style.left = (width > 0 ? startX : e.offsetX) + 'px'; selectionBox.style.top = (height > 0 ? startY : e.offsetY) + 'px';
         });
         window.addEventListener('mouseup', (e) => {
-            if (!isDrawing) return; isDrawing = false; selectionBox.style.display = 'none';
+            if (!isDrawing) return;
+            isDrawing = false; selectionBox.style.display = 'none';
             const ratioX = canvas.width / canvas.clientWidth; const ratioY = canvas.height / canvas.clientHeight;
             const cropW = Math.abs(e.offsetX - startX) * ratioX; const cropH = Math.abs(e.offsetY - startY) * ratioY;
-            if (cropW < 10 || cropH < 10) return; extraerTextoDeRecorte(Math.min(startX, e.offsetX) * ratioX, Math.min(startY, e.offsetY) * ratioY, cropW, cropH);
+            if (cropW < 10 || cropH < 10) return; 
+            extraerTextoDeRecorte(Math.min(startX, e.offsetX) * ratioX, Math.min(startY, e.offsetY) * ratioY, cropW, cropH);
         });
 
         async function extraerTextoDeRecorte(x, y, w, h) {
@@ -805,8 +823,11 @@
             const tempCanvas = document.createElement('canvas'); tempCanvas.width = w; tempCanvas.height = h; const tempCtx = tempCanvas.getContext('2d');
             if(document.getElementById('chk-filtro-ocr').checked) { tempCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)'; }
             tempCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+            
             try {
-                const result = await Tesseract.recognize(tempCanvas.toDataURL('image/png'), 'spa'); let textoExtraido = result.data.text.trim();
+                const imgData = tempCanvas.toDataURL('image/png');
+                const result = await Tesseract.recognize(imgData, 'spa');
+                let textoExtraido = result.data.text.trim();
                 
                 if(activeInputId === 'correo') textoExtraido = textoExtraido.replace(/\s+/g, '').toLowerCase();
                 if(activeInputId === 'cuenta') { textoExtraido = textoExtraido.replace(/\D/g, ''); evaluarBanco(textoExtraido); }
@@ -829,7 +850,6 @@
             }
         }
 
-        // ARCHIVOS Y PDF
         fileInput.addEventListener('change', (e) => { Array.from(e.target.files).forEach(agregarArchivo); fileInput.value = ''; });
         zonaArrastre.addEventListener('dragover', (e) => { e.preventDefault(); overlay.classList.add('dragover'); });
         zonaArrastre.addEventListener('dragleave', () => { overlay.classList.remove('dragover'); });
@@ -908,14 +928,10 @@
             if (archivo) {
                 canvasContainer.style.display = 'block';
                 if(archivo.isPdf) {
-                    document.getElementById('pdf-controls').style.display = 'flex';
-                    document.getElementById('pdf-page-indicator').innerText = `${archivo.currentPage} / ${archivo.totalPages}`;
-                    renderPdfPage(archivo.pdfDoc, archivo.currentPage);
+                    document.getElementById('pdf-controls').style.display = 'flex'; document.getElementById('pdf-page-indicator').innerText = `${archivo.currentPage} / ${archivo.totalPages}`; renderPdfPage(archivo.pdfDoc, archivo.currentPage);
                 } else {
                     document.getElementById('pdf-controls').style.display = 'none';
-                    const img = new Image();
-                    img.onload = () => { canvas.width = img.width; canvas.height = img.height; baseCanvasWidth = img.width; baseCanvasHeight = img.height; ctx.drawImage(img, 0, 0); resetZoom(); };
-                    img.src = archivo.renderedUrl;
+                    const img = new Image(); img.onload = () => { canvas.width = img.width; canvas.height = img.height; baseCanvasWidth = img.width; baseCanvasHeight = img.height; ctx.drawImage(img, 0, 0); resetZoom(); }; img.src = archivo.renderedUrl;
                 }
             }
         }
@@ -1068,7 +1084,7 @@
                     
                     form.reset(); document.getElementById('comercio').style.border = "1px solid #ccc";
                     archivosMemoria.forEach(a => URL.revokeObjectURL(a.url)); archivosMemoria = []; galeria.innerHTML = '';
-                    previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height); activeInputId = null; document.getElementById('seccion-constitutivo').style.display = 'none';
+                    previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height); activeInputId = null; document.getElementById('seccion-constitutivo').style.display = 'none'; document.getElementById('pdf-controls').style.display = 'none';
                     const serialesCont = document.getElementById('seriales-container'); while (serialesCont.children.length > 1) { serialesCont.removeChild(serialesCont.lastChild); }
                 } else { alert("Error en el script: " + resultado.mensaje); }
             } catch (error) { alert("Fallo de conexión. " + error); } finally { btnProcesar.innerText = "Verificar y Generar Expediente"; btnProcesar.style.backgroundColor = "#0d6efd"; btnProcesar.style.color = "white"; btnProcesar.disabled = false; }
