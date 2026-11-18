@@ -31,9 +31,11 @@
         .visor { flex: 1; border-right: 2px solid #ccc; display: flex; flex-direction: column; background: #e9ecef; position: relative; overflow: hidden;}
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         
-        .toolbar { background: #dee2e6; padding: 10px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #ccc; z-index: 20;}
-        .btn-agregar { background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.9rem;}
+        .toolbar { background: #dee2e6; padding: 10px 20px; display: flex; align-items: center; border-bottom: 2px solid #ccc; z-index: 20;}
+        .btn-agregar { background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.9rem; margin-right: 15px;}
         .toolbar-info { font-size: 0.85rem; color: #495057; }
+        
+        .ocr-toggle { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 0.85rem; color: #495057; cursor: pointer; background: #e9ecef; padding: 5px 10px; border-radius: 5px; border: 1px solid #ced4da;}
 
         #drop-zone-overlay { flex: 1; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 1.1rem; text-align: center; padding: 20px;}
         #preview-container { flex: 1; display: none; flex-direction: column; height: 100%; position: relative;}
@@ -74,37 +76,28 @@
         .btn-secundario { background-color: #dc3545; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 1; font-weight: bold;}
         #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;}
 
-        /* VISTAS DE TABLA */
         .vista-tabla { flex-direction: column; padding: 20px; background: #f8f9fa; overflow-y: auto; align-items: center;}
         .tabla-contenedor { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; width: 100%; max-width: 1200px;}
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem;}
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
         th { background-color: #e9ecef; color: #495057; }
         .fila-pendiente { background-color: #fff3cd !important; }
-        
-        /* BOTONES DE LA TABLA (AHORA MÁS VISIBLES) */
-        .btn-tabla { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem; margin-right: 5px; transition: 0.2s;}
-        .btn-editar { background: #ffc107; color: #000; border: 1px solid #d39e00;}
-        .btn-editar:hover { background: #e0a800; }
-        .btn-eliminar-registro { background: #dc3545; color: white; border: 1px solid #b02a37;}
-        .btn-eliminar-registro:hover { background: #c82333; }
+        .btn-tabla { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-right: 5px;}
+        .btn-editar { background: #ffc107; color: #000; }
+        .btn-eliminar-registro { background: #dc3545; color: white; }
 
-        /* PANEL TCRS */
+        #modal-edicion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center;}
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px;}
+        
         .tcrs-panel { max-width: 800px; margin: 0 auto;}
         .tcrs-resultado-box { background: #e8f0fe; padding: 20px; border-radius: 8px; border: 1px solid #b6d4fe; margin-top: 20px; display: none;}
         .tcrs-form-box { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ccc; margin-top: 15px;}
         
         #seccion-constitutivo { display: none; background: #fdfdfe; padding: 15px; border-radius: 8px; border: 1px dashed #0d6efd; margin-bottom: 15px;}
-        
-        /* MODAL DE EDICIÓN RÁPIDA (Se mantiene porque editar en línea rompe el diseño de las tablas complejas) */
-        #modal-edicion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center;}
-        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px;}
-        .modal-content h3 { margin-top: 0; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 10px;}
     </style>
 </head>
 <body>
 
-    <!-- PANTALLA DE LOGIN -->
     <div id="login-screen">
         <div class="login-box">
             <h2>Acceso al Sistema</h2>
@@ -117,7 +110,6 @@
         </div>
     </div>
 
-    <!-- NAVBAR PRINCIPAL -->
     <div class="navbar" id="navbar" style="display: none;">
         <div class="nav-brand">Gestor POS Integrado</div>
         <div class="nav-menu">
@@ -131,16 +123,19 @@
 
     <div id="app-container" style="display: none;">
         
-        <!-- ==========================================
-             VISTA 1: CARGA DE INSTALACIONES
-             ========================================== -->
         <div id="vista-carga" class="vista active">
             <div class="visor" id="zona-arrastre">
                 <div class="toolbar">
                     <button class="btn-agregar" onclick="document.getElementById('file-input').click()">➕ Agregar Archivo</button>
                     <span class="toolbar-info">Arrastra o pega (Ctrl+V) documentos aquí.</span>
+                    
+                    <!-- NUEVO INTERRUPTOR DE FILTRO OCR -->
+                    <label class="ocr-toggle" title="Activa esto solo si la foto subida es muy oscura y el sistema no lee el texto.">
+                        <input type="checkbox" id="chk-filtro-ocr"> 📸 Mejorar contraste OCR
+                    </label>
                 </div>
                 <input type="file" id="file-input" multiple accept="image/*,application/pdf" style="display: none;">
+                
                 <div id="drop-zone-overlay">Tus documentos aparecerán aquí.</div>
                 
                 <div id="preview-container">
@@ -152,12 +147,14 @@
                                 <div id="selection-box"></div>
                             </div>
                         </div>
+                        
                         <div class="map-zoom-controls" id="zoom-controls" style="display: none;">
                             <button class="btn-map-zoom" onclick="cambiarZoom(0.2)" title="Acercar">➕</button>
                             <button class="btn-map-zoom" onclick="cambiarZoom(-0.2)" title="Alejar">➖</button>
                             <button class="btn-map-zoom" onclick="resetZoom()" title="Ajustar a pantalla">⛶</button>
                         </div>
                     </div>
+
                     <div class="galeria" id="galeria"></div>
                 </div>
             </div>
@@ -170,7 +167,6 @@
                 </div>
 
                 <form id="param-form">
-                    
                     <div class="form-section-title">Datos del RIF</div>
                     <div class="form-group" style="margin-bottom:12px;">
                         <label>Nombre del Comercio / Razón Social</label>
@@ -195,7 +191,6 @@
                         <textarea id="direccion" rows="2" placeholder="Se extraerá del RIF..."></textarea>
                     </div>
 
-                    <!-- MÓDULO CONSTITUTIVO DINÁMICO -->
                     <div id="seccion-constitutivo">
                         <div class="form-section-title" style="margin-top:0;">Datos del Documento Constitutivo (Jurídica)</div>
                         <div class="form-row" style="margin-bottom:12px;">
@@ -347,13 +342,10 @@
             </div>
         </div>
 
-        <!-- ==========================================
-             VISTA 2: CONSULTA DE SOLICITUDES
-             ========================================== -->
         <div id="vista-consulta" class="vista vista-tabla">
             <div class="tabla-contenedor">
                 <h2 style="margin-top: 0; color: #0d6efd;">Gestión de Solicitudes (Instalaciones)</h2>
-                <p style="color: #6c757d; font-size: 0.9rem;">Las filas en amarillo indican que el Afiliado está PENDIENTE. Utiliza los botones de la derecha para Editar o Eliminar cada registro individualmente.</p>
+                <p style="color: #6c757d; font-size: 0.9rem;">Las filas en amarillo indican que el Afiliado está PENDIENTE.</p>
                 <button onclick="cargarSolicitudes()" class="btn-principal" style="width: auto; padding: 8px 15px; margin-bottom: 10px;">↻ Actualizar Tabla</button>
                 
                 <table id="tabla-solicitudes">
@@ -376,13 +368,10 @@
             </div>
         </div>
 
-        <!-- ==========================================
-             VISTA 3: DESINSTALACIONES Y TCRS (PARQUE TOTAL)
-             ========================================== -->
         <div id="vista-tcrs" class="vista vista-tabla">
             <div class="tabla-contenedor tcrs-panel">
                 <h2 style="margin-top: 0; color: #0d6efd;">Desinstalaciones y TCRS</h2>
-                <p style="color: #6c757d; font-size: 0.9rem;">Consulta el serial en el <b>Parque Total</b> más reciente alojado en Drive. Si el equipo está activo, podrás procesar su retiro o cambio de titular.</p>
+                <p style="color: #6c757d; font-size: 0.9rem;">Consulta el serial en el <b>Parque Total</b> más reciente alojado en Drive.</p>
                 
                 <form id="form-consulta-parque">
                     <div class="form-row">
@@ -402,13 +391,11 @@
                     <button type="submit" class="btn-principal" id="btn-consultar-parque" style="width:100%; margin-top:10px;">🔍 Consultar Estatus del Equipo</button>
                 </form>
                 
-                <!-- Resultados del Parque Total -->
                 <div id="tcrs-resultado-box" class="tcrs-resultado-box">
                     <h3 style="margin-top:0; color:#084298;">✅ Equipo Activo Encontrado</h3>
                     <p style="font-size:0.85rem; color:#495057; margin-bottom:10px;">Archivo Leído: <b id="tcrs-archivo-nombre"></b></p>
                     <div id="tcrs-tabla-datos" style="max-height: 250px; overflow-y: auto; background: white; border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;"></div>
                     
-                    <!-- Formulario de Completado para TCRS -->
                     <div class="tcrs-form-box">
                         <h4 style="margin-top:0; color:#dc3545;">Procesar Solicitud con estos datos</h4>
                         <form id="form-guardar-tcrs">
@@ -501,7 +488,6 @@
             };
 
             try {
-                // FETCH LIMPIO SIN HEADERS CORS
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if(data.status === "exito") {
@@ -540,7 +526,6 @@
             const payload = { accion: "consultar_parque", serial: document.getElementById('tcrs-serial-buscar').value.trim().toUpperCase(), banco: document.getElementById('tcrs-banco-buscar').value };
 
             try {
-                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 
@@ -588,7 +573,6 @@
             };
 
             try {
-                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if (data.status === "exito") {
@@ -607,7 +591,6 @@
             const tbody = document.getElementById('tbody-solicitudes');
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Cargando información... ⏳</td></tr>';
             try {
-                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ accion: "leer", usuario_actual: SESSION.usuario, rol: SESSION.rol }) });
                 const data = await response.json();
                 
@@ -635,7 +618,6 @@
         async function eliminarRegistro(idUnico) {
             if(!confirm("¿Estás seguro de que deseas ELIMINAR esta solicitud?")) return;
             try {
-                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ accion: "eliminar", id_registro: idUnico }) });
                 const data = await response.json();
                 if(data.status === "exito") { alert("Registro eliminado exitosamente."); cargarSolicitudes(); } 
@@ -659,7 +641,6 @@
                 afiliado: document.getElementById('edit_afiliado').value, serial: document.getElementById('edit_serial').value
             };
             try {
-                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const data = await response.json();
                 if(data.status === "exito") { document.getElementById('modal-edicion').style.display = 'none'; cargarSolicitudes(); } 
@@ -669,7 +650,7 @@
         });
 
         // ==========================================
-        // VISTA DE CARGA DE INSTALACIONES
+        // VISTA DE CARGA DE INSTALACIONES (OCR Y CANVAS)
         // ==========================================
         const zonaArrastre = document.getElementById('zona-arrastre');
         const overlay = document.getElementById('drop-zone-overlay');
@@ -768,10 +749,28 @@
             extraerTextoDeRecorte(Math.min(startX, e.offsetX) * ratioX, Math.min(startY, e.offsetY) * ratioY, cropW, cropH);
         });
 
+        // Aplicamos un pequeño filtro OCR opcional en una función separada
+        function aplicarFiltroOpcional(canvasBase, w, h) {
+            const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h;
+            const ctxTmp = tmp.getContext('2d');
+            if (document.getElementById('chk-filtro-ocr').checked) {
+                ctxTmp.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
+            }
+            ctxTmp.drawImage(canvasBase, 0, 0, w, h);
+            return tmp.toDataURL('image/png');
+        }
+
         async function extraerTextoDeRecorte(x, y, w, h) {
             ocrLoading.style.display = 'block'; ocrLoading.innerText = "Extrayendo recorte... ✂️";
             const tempCanvas = document.createElement('canvas'); tempCanvas.width = w; tempCanvas.height = h;
-            tempCanvas.getContext('2d').drawImage(canvas, x, y, w, h, 0, 0, w, h);
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Aplicar el filtro si está activo en el checkbox
+            if(document.getElementById('chk-filtro-ocr').checked) {
+                tempCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
+            }
+            
+            tempCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
             
             try {
                 const imgData = tempCanvas.toDataURL('image/png');
@@ -833,11 +832,7 @@
         function preRenderizarArchivo(file, urlTemporal) {
             return new Promise((resolve) => {
                 if (file.type.startsWith('image/')) {
-                    const img = new Image(); img.onload = () => {
-                        const tempCanvas = document.createElement('canvas'); tempCanvas.width = img.width; tempCanvas.height = img.height;
-                        tempCanvas.getContext('2d').filter = 'grayscale(100%) contrast(150%) brightness(110%)';
-                        tempCanvas.getContext('2d').drawImage(img, 0, 0); resolve(tempCanvas.toDataURL('image/jpeg', 1.0));
-                    }; img.src = urlTemporal;
+                    resolve(urlTemporal); // Enviamos el archivo puro sin filtros visuales!
                 } else if (file.type === 'application/pdf') {
                     ocrLoading.style.display = 'block'; ocrLoading.innerText = "Procesando PDF... 📄";
                     const fileReader = new FileReader();
@@ -847,12 +842,7 @@
                         const scale = 2.5; const viewport = page.getViewport({scale: scale});
                         const tempCanvas = document.createElement('canvas'); tempCanvas.width = viewport.width; tempCanvas.height = viewport.height;
                         await page.render({ canvasContext: tempCanvas.getContext('2d'), viewport: viewport }).promise;
-                        
-                        const img = new Image(); img.onload = () => {
-                            const tc = document.createElement('canvas'); tc.width = img.width; tc.height = img.height;
-                            tc.getContext('2d').filter = 'grayscale(100%) contrast(150%) brightness(110%)';
-                            tc.getContext('2d').drawImage(img, 0, 0); resolve(tc.toDataURL('image/jpeg', 1.0));
-                        }; img.src = tempCanvas.toDataURL('image/png');
+                        resolve(tempCanvas.toDataURL('image/png'));
                         ocrLoading.style.display = 'none';
                     }; fileReader.readAsArrayBuffer(file);
                 }
@@ -881,6 +871,7 @@
             const index = archivosMemoria.findIndex(a => a.id === id);
             if (index > -1) { URL.revokeObjectURL(archivosMemoria[index].url); archivosMemoria.splice(index, 1); }
             const item = document.querySelector(`.galeria-item[data-id="${id}"]`); if (item) item.remove();
+            
             if (archivosMemoria.length === 0) {
                 previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none';
                 zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height); activeInputId = null;
@@ -890,7 +881,20 @@
         async function ejecutarOCRAuto(imagenOSource, tipoDoc) {
             ocrLoading.style.display = 'block'; ocrLoading.innerText = "Extrayendo Datos... 🔍"; btnProcesar.disabled = true;
             try {
-                const result = await Tesseract.recognize(imagenOSource, 'spa');
+                // Si el toggle está activado, aplicamos filtro antes del OCR general
+                let imgProcesada = imagenOSource;
+                if(document.getElementById('chk-filtro-ocr').checked) {
+                    const imgT = new Image();
+                    imgProcesada = await new Promise(r => {
+                        imgT.onload = () => {
+                            const c = document.createElement('canvas'); c.width = imgT.width; c.height = imgT.height;
+                            const ctxC = c.getContext('2d'); ctxC.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
+                            ctxC.drawImage(imgT, 0, 0); r(c.toDataURL('image/jpeg'));
+                        }; imgT.src = imagenOSource;
+                    });
+                }
+
+                const result = await Tesseract.recognize(imgProcesada, 'spa');
                 const textoPlano = result.data.text; const textoUpper = textoPlano.toUpperCase();
                 
                 if (tipoDoc === 'CONSTITUTIVO') {
@@ -916,7 +920,7 @@
 
                 if (tipoDoc === 'CORREO') {
                     const textoSinEspacios = textoPlano.replace(/\s+/g, '');
-                    const matchCorreo = textoSinEspacios.replace(/(?:\(a\)|\[a\]|\{a\}|©|®|&)/g, '@').match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+                    const matchCorreo = textoSinEspacios.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
                     if (matchCorreo) document.getElementById('correo').value = matchCorreo[0].toLowerCase();
 
                     const matchTelefono = textoSinEspacios.match(/(?:0414|0424|0412|0416|0426|02\d{2})\d{7}/);
@@ -1074,7 +1078,6 @@
             };
 
             try {
-                // FETCH LIMPIO
                 const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(datosParaGuardar) });
                 const resultado = await response.json();
                 
