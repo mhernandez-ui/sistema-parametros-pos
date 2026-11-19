@@ -28,7 +28,6 @@
         .vista { display: none; width: 100%; height: 100%; }
         .vista.active { display: flex; }
 
-        /* VISTA DE CARGA */
         .visor { flex: 1; border-right: 2px solid #ccc; display: flex; flex-direction: column; background: #e9ecef; position: relative; overflow: hidden;}
         .formulario { flex: 1; padding: 20px 30px; overflow-y: auto; display: flex; flex-direction: column; background: #ffffff; }
         
@@ -77,9 +76,7 @@
         .botones-accion { display: flex; gap: 10px; margin-top: 20px; }
         .btn-principal { background-color: #0d6efd; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 2; font-weight: bold;}
         .btn-secundario { background-color: #dc3545; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; flex: 1; font-weight: bold;}
-        #resultado-crm { margin-top: 15px; background: #212529; color: #00ff00; padding: 15px; border-radius: 5px; display: none; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem;}
-
-        /* VISTAS DE TABLA Y FILTROS */
+        
         .vista-tabla { flex-direction: column; padding: 20px; background: #f8f9fa; overflow-y: auto; align-items: center;}
         .tabla-contenedor { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; width: 100%; max-width: 1400px;}
         
@@ -109,7 +106,6 @@
         
         .detalle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.9rem;}
         
-        /* PANEL TCRS */
         .tcrs-panel { max-width: 800px; margin: 0 auto;}
         .tcrs-resultado-box { background: #e8f0fe; padding: 20px; border-radius: 8px; border: 1px solid #b6d4fe; margin-top: 20px; display: none;}
         .tcrs-form-box { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ccc; margin-top: 15px;}
@@ -323,40 +319,32 @@
                             <label>Modelo POS</label>
                             <select id="modelo" required>
                                 <option value="">Seleccione...</option>
-                                <option value="N950K">N950K</option>
-                                <option value="N750">N750</option>
-                                <option value="N950S">N950S</option>
-                                <option value="N910">N910</option>
-                                <option value="SP600">SP600</option>
-                                <option value="6210">6210</option>
-                                <option value="7210">7210</option>
-                                <option value="ME51">ME51</option>
+                                <option value="N950K">N950K</option><option value="N750">N750</option>
+                                <option value="N950S">N950S</option><option value="N910">N910</option>
+                                <option value="SP600">SP600</option><option value="6210">6210</option>
+                                <option value="7210">7210</option><option value="ME51">ME51</option>
                                 <option value="ME60">ME60</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Comunicación</label>
                             <select id="comunicacion" required>
-                                <option value="GPRS">GPRS</option>
-                                <option value="WIFI">WIFI</option>
+                                <option value="GPRS">GPRS</option><option value="WIFI">WIFI</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Operadora</label>
                             <select id="operadora" required>
-                                <option value="DIGITEL">Digitel</option>
-                                <option value="MOVISTAR">Movistar</option>
-                                <option value="MOVILNET">Movilnet</option>
+                                <option value="DIGITEL">Digitel</option><option value="MOVISTAR">Movistar</option><option value="MOVILNET">Movilnet</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="botones-accion">
                         <button type="button" id="btn-limpiar" class="btn-secundario">Limpiar Todo</button>
-                        <button type="submit" id="btn-procesar" class="btn-principal">Verificar y Generar Expediente</button>
+                        <button type="submit" id="btn-procesar" class="btn-principal">Guardar Expediente</button>
                     </div>
                 </form>
-                <div id="resultado-crm"></div>
             </div>
         </div>
 
@@ -371,7 +359,6 @@
                     </div>
                 </div>
                 
-                <!-- SECCIÓN DE FILTROS -->
                 <div class="filtros-container">
                     <input type="text" id="filtro-buscar" placeholder="🔍 Buscar RIF, Nombre, Serial o Afiliado..." onkeyup="aplicarFiltros()">
                     <select id="filtro-estatus" onchange="aplicarFiltros()">
@@ -387,8 +374,7 @@
                         <option value="PROVINCIAL">Provincial</option>
                         <option value="BANCARIBE">Bancaribe</option>
                         <option value="BANESCO">Banesco</option>
-                        <option value="BNC">BNC</option>
-                        <!-- (Se pueden agregar más si se desea limitar el menú) -->
+                        <option value="BNC">BNC Nacional de Crédito</option>
                     </select>
                     <select id="filtro-usuario" onchange="aplicarFiltros()">
                         <option value="">Todos los Usuarios</option>
@@ -416,7 +402,6 @@
                     </tbody>
                 </table>
                 
-                <!-- CONTROLES DE PAGINACIÓN -->
                 <div class="paginacion-container">
                     <button id="btn-prev-page" onclick="cambiarPagina(-1)">◀ Anterior</button>
                     <span id="paginacion-info">Página 1 de 1</span>
@@ -492,7 +477,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE DETALLE Y EDICIÓN UNIFICADO -->
+    <!-- MODAL DE EDICIÓN Y DETALLE -->
     <div id="modal-edicion" class="modal-overlay">
         <div class="modal-content">
             <h3 id="modal-titulo">📝 Detalle de Solicitud</h3>
@@ -572,8 +557,9 @@
                     <div class="form-group" style="grid-column: span 2;"><label>Dirección Fiscal</label><textarea id="edit_direccion" rows="2"></textarea></div>
                 </div>
                 
-                <div style="margin-top: 20px; text-align: center; display:flex; gap:10px; justify-content:center;">
+                <div style="margin-top: 20px; text-align: center; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                     <a id="btn-abrir-drive-edit" href="#" target="_blank" class="btn-principal" style="text-decoration:none; padding:10px; flex:1; background:#0dcaf0; color:black;">📁 Expediente Drive</a>
+                    <button type="button" class="btn-principal" id="btn-copiar-cpos" style="background:#198754; flex:1;" onclick="copiarDatosCPOS()">📋 Copiar Datos (CPOS)</button>
                     <button type="submit" class="btn-principal" id="btn-guardar-edicion" style="flex:1;">💾 Guardar Cambios</button>
                     <button type="button" class="btn-secundario" style="flex:1;" onclick="document.getElementById('modal-edicion').style.display='none'">Cerrar</button>
                 </div>
@@ -643,7 +629,6 @@
                 if(data.status === "exito") {
                     DATA_SOLICITUDES = data.datos.reverse(); 
                     
-                    // Llenar combo de usuarios dinámicamente si es maestro
                     if(isMaestro) {
                         const usuariosSet = [...new Set(DATA_SOLICITUDES.map(item => item.usuario))];
                         const selUsu = document.getElementById('filtro-usuario');
@@ -663,7 +648,7 @@
             const est = document.getElementById('filtro-estatus').value;
             const bnc = document.getElementById('filtro-banco').value;
             const usu = document.getElementById('filtro-usuario').value;
-            const fch = document.getElementById('filtro-fecha').value; // Formato YYYY-MM-DD del input nativo
+            const fch = document.getElementById('filtro-fecha').value; 
 
             DATOS_FILTRADOS = DATA_SOLICITUDES.filter(reg => {
                 let matchTxt = !txt || 
@@ -678,8 +663,8 @@
                 
                 let matchFch = true;
                 if (fch) {
-                    const fechaCorta = reg.fecha.split(' ')[0]; // DD/MM/YYYY
-                    const [y, m, d] = fch.split('-'); // YYYY-MM-DD
+                    const fechaCorta = reg.fecha.split(' ')[0]; 
+                    const [y, m, d] = fch.split('-'); 
                     matchFch = fechaCorta === `${d}/${m}/${y}`;
                 }
 
@@ -722,7 +707,6 @@
                 let checkTd = isMaestro ? `<td><input type="checkbox" class="chk-solicitud" value="${reg.id}" ${esValidado ? 'disabled' : ''}></td>` : '';
                 let estatusBadge = esValidado ? '<span style="color:green;font-weight:bold;">VALIDADO</span>' : `<span style="color:#d39e00;font-weight:bold;">${reg.estatus}</span>`;
                 
-                // CONDICIONAMIENTO DE BOTONES SI ESTÁ VALIDADO
                 let btnEdit = `<button class="btn-tabla btn-editar" onclick="verDetalleYEditar('${reg.id}')" title="Editar Solicitud">✏️ Editar</button>`;
                 if(esValidado) {
                     btnEdit = `<button class="btn-tabla" style="background:#6c757d; color:white;" onclick="verDetalleYEditar('${reg.id}')" title="Ver Detalles">👁️ Ver</button>`;
@@ -787,7 +771,6 @@
             if(!reg) return;
 
             const esValidado = (reg.estatus === 'VALIDADO');
-
             document.getElementById('modal-titulo').innerText = esValidado ? "👁️ Detalle de Solicitud (Solo Lectura)" : "📝 Editar Solicitud";
 
             document.getElementById('edit_id').value = reg.id;
@@ -809,10 +792,9 @@
             document.getElementById('edit_direccion').value = reg.direccion;
             
             const btnDrive = document.getElementById('btn-abrir-drive-edit');
-            if(reg.folderUrl !== "Sin documentos") { btnDrive.href = reg.folderUrl; btnDrive.style.display = 'block'; } 
+            if(reg.folderUrl && reg.folderUrl !== "Sin documentos") { btnDrive.href = reg.folderUrl; btnDrive.style.display = 'block'; } 
             else { btnDrive.style.display = 'none'; }
             
-            // Lógica de Bloqueo si está VALIDADO
             const formInputs = document.querySelectorAll('#form-edicion input, #form-edicion select, #form-edicion textarea');
             const btnGuardar = document.getElementById('btn-guardar-edicion');
             
@@ -825,6 +807,51 @@
             }
 
             document.getElementById('modal-edicion').style.display = 'flex';
+        }
+        
+        function copiarDatosCPOS() {
+            const idUnico = document.getElementById('edit_id').value;
+            const reg = DATA_SOLICITUDES.find(r => r.id === idUnico);
+            
+            const rif = document.getElementById('edit_rif').value;
+            const tipoPersona = (rif.toUpperCase().startsWith('V') || rif.toUpperCase().startsWith('E')) ? 'NATURAL' : 'JURÍDICA';
+            const prefijoRif = rif.charAt(0).toUpperCase(); 
+            const numeroRif = rif.substring(1); 
+            
+            let txtConst = "";
+            if(tipoPersona === 'JURÍDICA' && reg) {
+                if(reg.const_circ || reg.const_fecha || reg.const_tomo || reg.const_numero || reg.const_expediente) {
+                    txtConst = `Documento Constitutivo: ${reg.const_circ || ''} | Fecha: ${reg.const_fecha || ''} | Tomo: ${reg.const_tomo || ''} | Nro: ${reg.const_numero || ''} | Exp: ${reg.const_expediente || ''}\n`;
+                }
+            }
+
+            const comercio = document.getElementById('edit_comercio').value;
+            const contacto_cedula = document.getElementById('edit_contacto_cedula').value;
+            const contacto_nombre = document.getElementById('edit_contacto_nombre').value;
+            const correo = document.getElementById('edit_correo').value;
+            const telefono = document.getElementById('edit_telefono').value;
+            const contribuyente = document.getElementById('edit_contribuyente').value;
+            const actividad = document.getElementById('edit_actividad').value;
+            const afiliado = document.getElementById('edit_afiliado').value;
+            const banco = document.getElementById('edit_banco').value;
+            const cuenta = document.getElementById('edit_cuenta').value;
+            const modelo = document.getElementById('edit_modelo').value;
+            const serial = document.getElementById('edit_serial').value;
+
+            let textoCrm = `--- INFORMACIÓN DE COMERCIO (${tipoPersona}) ---\nTipo Persona: ${tipoPersona === 'NATURAL' ? 'Natural' : 'Jurídica'}\nTipo: ${prefijoRif} | Nro. Documento RIF: ${numeroRif}\n`;
+            if (tipoPersona === 'NATURAL') { 
+                textoCrm += `Cédula de Contacto: ${contacto_cedula}\nNombres y Apellidos / Firma: ${comercio}\n`; 
+            } else { 
+                textoCrm += `Razón Social: ${comercio}\nRazón Comercial: ${comercio}\nRepresentante / Contacto: ${contacto_nombre} (C.I: ${contacto_cedula})\n`; 
+            }
+            textoCrm += `Correo: ${correo}\nTeléfono: ${telefono}\nContribuyente Especial: ${contribuyente}\nActividad Comercial: ${actividad}\n` + txtConst + `------------------------------------------\nAfiliado: ${afiliado} | Banco: ${banco} | Cuenta: ${cuenta} | POS: ${modelo}\nSerial: ${serial}`;
+
+            navigator.clipboard.writeText(textoCrm).then(() => {
+                const btn = document.getElementById('btn-copiar-cpos');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = "✅ ¡Copiado al Portapapeles!";
+                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+            }).catch(err => { alert("Error al copiar: " + err); });
         }
 
         async function eliminarRegistro(idUnico) {
@@ -943,24 +970,19 @@
         const selectionBox = document.getElementById('selection-box');
         const zoomControls = document.getElementById('zoom-controls');
         const galeria = document.getElementById('galeria'); 
-        
         const form = document.getElementById('param-form');
         const btnProcesar = document.getElementById('btn-procesar');
         const ocrLoading = document.getElementById('ocr-loading');
         const indicadorRecorte = document.getElementById('indicador-recorte');
         const campoObjetivo = document.getElementById('campo-objetivo');
         
-        let archivosMemoria = [];
-        let baseCanvasWidth = 0; let baseCanvasHeight = 0;
-        let zoomActual = 1; let isDrawing = false; let startX, startY;
-        let activeInputId = null;
+        let archivosMemoria = []; let baseCanvasWidth = 0; let baseCanvasHeight = 0; let zoomActual = 1; let isDrawing = false; let startX, startY; let activeInputId = null;
 
         document.getElementById('rif').addEventListener('input', (e) => {
             let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
             if (val.startsWith('J') || val.startsWith('G')) { document.getElementById('seccion-constitutivo').style.display = 'block'; } 
             else { document.getElementById('seccion-constitutivo').style.display = 'none'; }
         });
-
         document.getElementById('comercio').addEventListener('input', (e) => {
             const valRif = document.getElementById('rif').value.toUpperCase();
             if (valRif.startsWith('V') || valRif.startsWith('E')) { document.getElementById('contacto_nombre').value = e.target.value; }
@@ -969,16 +991,14 @@
         function agregarSerial() {
             const container = document.getElementById('seriales-container');
             const div = document.createElement('div'); div.className = 'form-row'; div.style.marginBottom = '5px';
-            const uniqueId = 'serial_' + Date.now();
-            div.innerHTML = `<input type="text" class="serial-input" id="${uniqueId}" placeholder="Ej: NFD300348979" required style="width: 100%;">
-                             <button type="button" class="btn-secundario" onclick="this.parentElement.remove()" style="flex:none; width:45px;" title="Eliminar equipo">❌</button>`;
+            div.innerHTML = `<input type="text" class="serial-input" id="serial_${Date.now()}" required style="width: 100%;">
+                             <button type="button" class="btn-secundario" onclick="this.parentElement.remove()" style="flex:none; width:45px;">❌</button>`;
             container.appendChild(div); bindFocusEvent(div.querySelector('input'));
         }
 
         function bindFocusEvent(input) {
             input.addEventListener('focus', (e) => {
-                activeInputId = e.target.id;
-                let labelText = "";
+                activeInputId = e.target.id; let labelText = "";
                 if(e.target.parentElement.parentElement && e.target.parentElement.parentElement.previousElementSibling && e.target.parentElement.parentElement.previousElementSibling.tagName === 'LABEL') {
                     labelText = e.target.parentElement.parentElement.previousElementSibling.innerText; 
                 } else if(e.target.parentElement.previousElementSibling && e.target.parentElement.previousElementSibling.tagName === 'LABEL') {
@@ -990,41 +1010,33 @@
         document.querySelectorAll('.form-group input, .form-group textarea').forEach(bindFocusEvent);
 
         document.getElementById('btn-limpiar').addEventListener('click', () => {
-            if(confirm("¿Estás seguro de borrar toda la información y archivos de esta consulta?")) {
+            if(confirm("¿Seguro de borrar toda la información y archivos?")) {
                 form.reset(); document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
                 archivosMemoria.forEach(a => URL.revokeObjectURL(a.url)); archivosMemoria = []; galeria.innerHTML = '';
                 previewContainer.style.display = 'none'; overlay.style.display = 'flex'; canvasContainer.style.display = 'none'; zoomControls.style.display = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height);
-                indicadorRecorte.style.display = 'none'; document.getElementById('resultado-crm').style.display = 'none'; activeInputId = null; activeDocumentId = null; document.getElementById('seccion-constitutivo').style.display = 'none'; document.getElementById('pdf-controls').style.display = 'none';
+                indicadorRecorte.style.display = 'none'; activeInputId = null; activeDocumentId = null; document.getElementById('seccion-constitutivo').style.display = 'none'; document.getElementById('pdf-controls').style.display = 'none';
                 const serialesCont = document.getElementById('seriales-container'); while (serialesCont.children.length > 1) { serialesCont.removeChild(serialesCont.lastChild); }
             }
         });
 
-        function aplicarZoom() {
-            if (baseCanvasWidth === 0) return;
-            canvasContainer.style.width = (baseCanvasWidth * zoomActual) + 'px'; canvasContainer.style.height = (baseCanvasHeight * zoomActual) + 'px';
-        }
+        function aplicarZoom() { if (baseCanvasWidth === 0) return; canvasContainer.style.width = (baseCanvasWidth * zoomActual) + 'px'; canvasContainer.style.height = (baseCanvasHeight * zoomActual) + 'px'; }
         function cambiarZoom(incremento) { zoomActual += incremento; if (zoomActual < 0.2) zoomActual = 0.2; if (zoomActual > 5) zoomActual = 5; aplicarZoom(); }
         function resetZoom() { const wrapWidth = previewWrapper.clientWidth - 40; const fitZoom = wrapWidth / baseCanvasWidth; zoomActual = fitZoom < 1 ? fitZoom : 1; aplicarZoom(); }
 
         canvasContainer.addEventListener('mousedown', (e) => {
             if (!activeInputId) { alert("Haz clic en la casilla del formulario donde quieres guardar el dato primero."); return; }
-            isDrawing = true; startX = e.offsetX; startY = e.offsetY;
-            selectionBox.style.left = startX + 'px'; selectionBox.style.top = startY + 'px';
-            selectionBox.style.width = '0px'; selectionBox.style.height = '0px'; selectionBox.style.display = 'block';
+            isDrawing = true; startX = e.offsetX; startY = e.offsetY; selectionBox.style.left = startX + 'px'; selectionBox.style.top = startY + 'px'; selectionBox.style.width = '0px'; selectionBox.style.height = '0px'; selectionBox.style.display = 'block';
         });
         window.addEventListener('mousemove', (e) => {
-            if (!isDrawing) return;
-            const width = e.offsetX - startX; const height = e.offsetY - startY;
+            if (!isDrawing) return; const width = e.offsetX - startX; const height = e.offsetY - startY;
             selectionBox.style.width = Math.abs(width) + 'px'; selectionBox.style.height = Math.abs(height) + 'px';
             selectionBox.style.left = (width > 0 ? startX : e.offsetX) + 'px'; selectionBox.style.top = (height > 0 ? startY : e.offsetY) + 'px';
         });
         window.addEventListener('mouseup', (e) => {
-            if (!isDrawing) return;
-            isDrawing = false; selectionBox.style.display = 'none';
+            if (!isDrawing) return; isDrawing = false; selectionBox.style.display = 'none';
             const ratioX = canvas.width / canvas.clientWidth; const ratioY = canvas.height / canvas.clientHeight;
             const cropW = Math.abs(e.offsetX - startX) * ratioX; const cropH = Math.abs(e.offsetY - startY) * ratioY;
-            if (cropW < 10 || cropH < 10) return; 
-            extraerTextoDeRecorte(Math.min(startX, e.offsetX) * ratioX, Math.min(startY, e.offsetY) * ratioY, cropW, cropH);
+            if (cropW < 10 || cropH < 10) return; extraerTextoDeRecorte(Math.min(startX, e.offsetX) * ratioX, Math.min(startY, e.offsetY) * ratioY, cropW, cropH);
         });
 
         async function extraerTextoDeRecorte(x, y, w, h) {
@@ -1032,11 +1044,9 @@
             const tempCanvas = document.createElement('canvas'); tempCanvas.width = w; tempCanvas.height = h; const tempCtx = tempCanvas.getContext('2d');
             if(document.getElementById('chk-filtro-ocr').checked) { tempCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)'; }
             tempCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
-            
             try {
                 const imgData = tempCanvas.toDataURL('image/png');
-                const result = await Tesseract.recognize(imgData, 'spa');
-                let textoExtraido = result.data.text.trim();
+                const result = await Tesseract.recognize(imgData, 'spa'); let textoExtraido = result.data.text.trim();
                 
                 if(activeInputId === 'correo') textoExtraido = textoExtraido.replace(/\s+/g, '').toLowerCase();
                 if(activeInputId === 'cuenta') { textoExtraido = textoExtraido.replace(/\D/g, ''); evaluarBanco(textoExtraido); }
@@ -1048,9 +1058,15 @@
                 }
                 if(activeInputId === 'afiliado') textoExtraido = textoExtraido.replace(/\s/g, '').toUpperCase();
                 if(activeInputId === 'const_fecha') { const matchF = textoExtraido.match(/\d{2}[\/\-]\d{2}[\/\-]\d{4}/); if(matchF) textoExtraido = matchF[0].replace(/\-/g, '/'); }
-                
                 if (textoExtraido) { document.getElementById(activeInputId).value = textoExtraido; }
             } catch (error) { console.error("Error OCR:", error); } finally { ocrLoading.style.display = 'none'; }
+        }
+
+        function evaluarBanco(numeroCuenta) {
+            if (numeroCuenta.length >= 4) {
+                const selectBanco = document.getElementById('banco');
+                for (let option of selectBanco.options) { if (option.getAttribute('data-pref') === numeroCuenta.substring(0, 4)) { selectBanco.value = option.value; break; } }
+            }
         }
 
         fileInput.addEventListener('change', (e) => { Array.from(e.target.files).forEach(agregarArchivo); fileInput.value = ''; });
@@ -1226,7 +1242,6 @@
 
         function validarDatos() {
             document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
-            
             let rifInput = document.getElementById('rif'); rifInput.value = rifInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
             let cuentaInput = document.getElementById('cuenta'); cuentaInput.value = cuentaInput.value.replace(/\D/g, '');
             
@@ -1240,11 +1255,9 @@
                 if(v !== "") { if(!/^[A-Z0-9]{8,15}$/.test(v) || !/\d/.test(v)) { si.classList.add('input-error'); errores.push("Serial inválido: " + v); } else { arrSeriales.push(v); } }
             });
             if(arrSeriales.length === 0) { document.querySelector('.serial-input').classList.add('input-error'); errores.push("Debes ingresar al menos un serial válido."); }
-
             if (!/^01\d{18}$/.test(cuentaInput.value)) { cuentaInput.classList.add('input-error'); errores.push("Cuenta Bancaria inválida (Debe tener 20 dígitos)."); }
             if (!/^0[1-9]\d{9}$/.test(document.getElementById('telefono').value.replace(/\D/g, ''))) { document.getElementById('telefono').classList.add('input-error'); errores.push("Teléfono inválido."); }
             if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(document.getElementById('correo').value.trim())) { document.getElementById('correo').classList.add('input-error'); errores.push("Correo electrónico inválido."); }
-
             if (errores.length > 0) { alert("⚠️ ERRORES EN LA SOLICITUD:\n\n- " + errores.join("\n- ")); return false; }
             return true;
         }
@@ -1253,16 +1266,9 @@
             e.preventDefault();
             if (!validarDatos()) return;
 
-            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos...";
-            btnProcesar.style.backgroundColor = "#ffc107"; btnProcesar.style.color = "#000"; btnProcesar.disabled = true;
+            btnProcesar.innerText = "⏳ Creando expediente en Drive y guardando datos..."; btnProcesar.style.backgroundColor = "#ffc107"; btnProcesar.style.color = "#000"; btnProcesar.disabled = true;
 
-            const filePromises = archivosMemoria.map(a => {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve({ nombre: a.file.name || 'doc_' + Date.now(), mimeType: a.file.type, base64: reader.result.split(',')[1] });
-                    reader.onerror = reject; reader.readAsDataURL(a.file);
-                });
-            });
+            const filePromises = archivosMemoria.map(a => { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ nombre: a.file.name || 'doc_' + Date.now(), mimeType: a.file.type, base64: reader.result.split(',')[1] }); reader.onerror = reject; reader.readAsDataURL(a.file); }); });
             const archivosBase64 = await Promise.all(filePromises);
             
             const inputsSeriales = document.querySelectorAll('.serial-input'); const arrSeriales = [];
@@ -1287,19 +1293,7 @@
                 const resultado = await response.json();
                 
                 if(resultado.status === "exito") {
-                    const tipoPersona = (datosParaGuardar.rif.toUpperCase().startsWith('V') || datosParaGuardar.rif.toUpperCase().startsWith('E')) ? 'NATURAL' : 'JURÍDICA';
-                    const prefijoRif = datosParaGuardar.rif.charAt(0).toUpperCase(); const numeroRif = datosParaGuardar.rif.substring(1); 
-                    
-                    let txtConst = "";
-                    if(tipoPersona === 'JURÍDICA') { txtConst = `Documento Constitutivo: ${datosParaGuardar.const_circ} | Fecha: ${datosParaGuardar.const_fecha} | Tomo: ${datosParaGuardar.const_tomo} | Nro: ${datosParaGuardar.const_numero} | Exp: ${datosParaGuardar.const_expediente}\n`; }
-
-                    let textoCrm = `--- INFORMACIÓN DE COMERCIO (${tipoPersona}) ---\nTipo Persona: ${tipoPersona === 'NATURAL' ? 'Natural' : 'Jurídica'}\nTipo: ${prefijoRif} | Nro. Documento RIF: ${numeroRif}\n`;
-                    if (tipoPersona === 'NATURAL') { textoCrm += `Cédula de Contacto: ${datosParaGuardar.contacto_cedula}\nNombres y Apellidos / Firma: ${datosParaGuardar.comercio}\n`; } 
-                    else { textoCrm += `Razón Social: ${datosParaGuardar.comercio}\nRazón Comercial: ${datosParaGuardar.comercio}\nRepresentante / Contacto: ${datosParaGuardar.contacto_nombre} (C.I: ${datosParaGuardar.contacto_cedula})\n`; }
-                    textoCrm += `Correo: ${datosParaGuardar.correo}\nTeléfono: ${datosParaGuardar.telefono}\nContribuyente Especial: ${datosParaGuardar.contribuyente}\nActividad Comercial: ${datosParaGuardar.actividad}\n` + txtConst + `------------------------------------------\nAfiliado: ${datosParaGuardar.afiliado} | Banco: ${datosParaGuardar.banco} | Cuenta: ${datosParaGuardar.cuenta} | POS: ${datosParaGuardar.modelo}\nSeriales Solicitados: ${datosParaGuardar.seriales.join(', ')}`;
-                                
-                    resultadoCrm.style.display = 'block';
-                    resultadoCrm.innerHTML = textoCrm.replace(/\n/g, '<br>') + `<br><br>(Copia este texto para tu CRM)<br><br><a id="enlace-drive" href="${resultado.folderUrl}" target="_blank">📁 Abrir Expediente en Google Drive</a>`;
+                    alert("✅ Solicitudes guardadas con éxito en la base de datos.");
                     
                     form.reset(); document.getElementById('comercio').style.border = "1px solid #ccc";
                     archivosMemoria.forEach(a => URL.revokeObjectURL(a.url)); archivosMemoria = []; galeria.innerHTML = '';
