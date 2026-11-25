@@ -843,8 +843,9 @@
             if (tipoPersona === 'NATURAL') { 
                 textoCrm += `Cédula de Contacto: ${contacto_cedula}\nNombres y Apellidos / Firma: ${comercio}\nContacto: ${contacto_nombre}\n`; 
             } else { 
-                textoCrm += `Razón Social: ${comercio}\nRazón Comercial: ${comercio}\nRepresentante / Contacto: ${contacto_nombre} (C.I: ${contacto_cedula})\n / Dirección: ${direccion}\n`; 
+                textoCrm += `Razón Social: ${comercio}\nRazón Comercial: ${comercio}\nRepresentante / Contacto: ${contacto_nombre} (C.I: ${contacto_cedula})\n`; 
             }
+            textoCrm += `Dirección: ${direccion}\n`;
             textoCrm += `Correo: ${correo}\nTeléfono: ${telefono}\nContribuyente Especial: ${contribuyente}\nActividad Comercial: ${actividad}\n` + txtConst + `------------------------------------------\nAfiliado: ${afiliado} | Banco: ${banco} | Cuenta: ${cuenta} | POS: ${modelo}\nSerial: ${serial}`;
 
             navigator.clipboard.writeText(textoCrm).then(() => {
