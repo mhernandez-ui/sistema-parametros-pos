@@ -837,12 +837,13 @@
             const cuenta = document.getElementById('edit_cuenta').value;
             const modelo = document.getElementById('edit_modelo').value;
             const serial = document.getElementById('edit_serial').value;
+            const direccion = document.getElementById('edit_direccion').value;
 
             let textoCrm = `--- INFORMACIÓN DE COMERCIO (${tipoPersona}) ---\nTipo Persona: ${tipoPersona === 'NATURAL' ? 'Natural' : 'Jurídica'}\nTipo: ${prefijoRif} | Nro. Documento RIF: ${numeroRif}\n`;
             if (tipoPersona === 'NATURAL') { 
                 textoCrm += `Cédula de Contacto: ${contacto_cedula}\nNombres y Apellidos / Firma: ${comercio}\nContacto: ${contacto_nombre}\n`; 
             } else { 
-                textoCrm += `Razón Social: ${comercio}\nRazón Comercial: ${comercio}\nRepresentante / Contacto: ${contacto_nombre} (C.I: ${contacto_cedula})\n`; 
+                textoCrm += `Razón Social: ${comercio}\nRazón Comercial: ${comercio}\nRepresentante / Contacto: ${contacto_nombre} (C.I: ${contacto_cedula})\n / Dirección: ${direccion}\n`; 
             }
             textoCrm += `Correo: ${correo}\nTeléfono: ${telefono}\nContribuyente Especial: ${contribuyente}\nActividad Comercial: ${actividad}\n` + txtConst + `------------------------------------------\nAfiliado: ${afiliado} | Banco: ${banco} | Cuenta: ${cuenta} | POS: ${modelo}\nSerial: ${serial}`;
 
