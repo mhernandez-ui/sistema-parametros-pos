@@ -840,7 +840,7 @@
 
             let textoCrm = `--- INFORMACIÓN DE COMERCIO (${tipoPersona}) ---\nTipo Persona: ${tipoPersona === 'NATURAL' ? 'Natural' : 'Jurídica'}\nTipo: ${prefijoRif} | Nro. Documento RIF: ${numeroRif}\n`;
             if (tipoPersona === 'NATURAL') { 
-                textoCrm += `Cédula de Contacto: ${contacto_cedula}\nNombres y Apellidos / Firma: ${comercio}\n`; 
+                textoCrm += `Cédula de Contacto: ${contacto_cedula}\nNombres y Apellidos / Firma: ${comercio}\nContacto: ${contacto_nombre}\n`; 
             } else { 
                 textoCrm += `Razón Social: ${comercio}\nRazón Comercial: ${comercio}\nRepresentante / Contacto: ${contacto_nombre} (C.I: ${contacto_cedula})\n`; 
             }
